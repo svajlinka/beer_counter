@@ -912,6 +912,10 @@ function load() {
   if (!data.selectedBeer) data.selectedBeer = defaultSelectedBeer();
 
   let dirty = false;
+  if (!Array.isArray(data.missingBeers)) {
+    data.missingBeers = [];
+    dirty = true;
+  }
 
   if (!data.date || typeof data.date !== "string") {
     data.date = data.log.length > 0 ? inferSessionDateFromLog(data.log) : today();
@@ -921,11 +925,13 @@ function load() {
   if (data.date !== today()) {
     const keptRef =
       normalizeReferencePeriodMinutes(data.referencePeriodMinutes) ?? DEFAULT_REFERENCE_PERIOD_MINUTES;
+    const keptMissing = Array.isArray(data.missingBeers) ? data.missingBeers : [];
     data = {
       date: today(),
       log: [],
       selectedBeer: defaultSelectedBeer(),
-      referencePeriodMinutes: snapReferencePeriodToPickerChoice(keptRef)
+      referencePeriodMinutes: snapReferencePeriodToPickerChoice(keptRef),
+      missingBeers: keptMissing
     };
     dirty = true;
   }
@@ -1213,6 +1219,59 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+function renderMissingBeersList() {
+  const ul = document.getElementById("missingBeersList");
+  if (!ul) return;
+  const data = load();
+  const items = Array.isArray(data.missingBeers) ? data.missingBeers : [];
+  if (items.length === 0) {
+    ul.innerHTML = `<li class="missing-beers-empty">No entries yet.</li>`;
+    return;
+  }
+  ul.innerHTML = items.map((name) => `<li>${escapeHtml(name)}</li>`).join("");
+}
+
+let beerSearchMissingFeedbackTimer = null;
+
+function showBeerSearchMissingFeedback(msg) {
+  const el = document.getElementById("beerSearchMissingFeedback");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove("hidden");
+  if (beerSearchMissingFeedbackTimer) clearTimeout(beerSearchMissingFeedbackTimer);
+  beerSearchMissingFeedbackTimer = setTimeout(() => {
+    el.classList.add("hidden");
+    el.textContent = "";
+    beerSearchMissingFeedbackTimer = null;
+  }, 4000);
+}
+
+function addMissingBeerFromSearchField() {
+  const search = document.getElementById("beerSearch");
+  const raw = (search && search.value.trim()) || "";
+  if (!raw) {
+    showBeerSearchMissingFeedback("Type a beer name in the search field, then tap +.");
+    search?.focus();
+    return;
+  }
+  const data = load();
+  if (!Array.isArray(data.missingBeers)) data.missingBeers = [];
+  data.missingBeers.push(raw);
+  save(data);
+  renderMissingBeersList();
+  if (search) search.value = "";
+  renderResults([]);
+  syncBeerSearchClearVisibility();
+  showBeerSearchMissingFeedback("Added to missing list.");
+}
+
+function clearMissingBeersList() {
+  const data = load();
+  data.missingBeers = [];
+  save(data);
+  renderMissingBeersList();
+}
+
 let logEditIndex = null;
 let logEditDrinkKey = null;
 
@@ -1447,6 +1506,7 @@ function render() {
   const refInput = document.getElementById("referencePeriodInput");
   if (refInput) refInput.value = String(getReferencePeriodMinutes(data));
   syncPresetMatrixButtonLabels();
+  renderMissingBeersList();
   updateModeUI();
   updateSelectedBeerUI();
 }
@@ -1466,6 +1526,11 @@ beerSearchEl.addEventListener("input", (e) => {
 
 beerSearchEl.addEventListener("focus", openBeerResults);
 beerSearchEl.addEventListener("click", openBeerResults);
+
+document.getElementById("beerSearchAdd").addEventListener("mousedown", (e) => e.preventDefault());
+document.getElementById("beerSearchAdd").addEventListener("click", () => {
+  addMissingBeerFromSearchField();
+});
 
 document.getElementById("beerSearchClear").addEventListener("mousedown", (e) => e.preventDefault());
 document.getElementById("beerSearchClear").addEventListener("click", () => {
@@ -1520,6 +1585,8 @@ document.getElementById("logEditMatrix").addEventListener("click", (e) => {
   logEditDrinkKey = btn.getAttribute("data-drink");
   syncLogEditMatrixSelection();
 });
+
+document.getElementById("missingBeersClearBtn").addEventListener("click", clearMissingBeersList);
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;

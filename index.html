@@ -14,8 +14,10 @@
   <div class="topbar">
     <div class="beer-search-wrap">
       <input id="beerSearch" type="text" placeholder="Tap to browse or type to filter…" autocomplete="off" />
+      <button type="button" id="beerSearchAdd" class="beer-search-add" aria-label="Add search text to missing list" title="Add to missing list">+</button>
       <button type="button" id="beerSearchClear" class="beer-search-clear hidden" aria-label="Clear search" title="Clear">×</button>
     </div>
+    <p id="beerSearchMissingFeedback" class="beer-search-missing-feedback hidden" role="status" aria-live="polite"></p>
     <div id="searchResults" class="results"></div>
   </div>
 
@@ -57,6 +59,11 @@
       <select id="referencePeriodInput" class="ref-period-input" aria-label="Reference period in minutes"></select>
     </div>
     <button type="button" id="resetBtn" class="reset">Reset</button>
+    <section class="missing-beers-block" aria-labelledby="missingBeersHeading">
+      <h2 id="missingBeersHeading" class="missing-beers-title">Missing from list</h2>
+      <ul id="missingBeersList" class="missing-beers-list"></ul>
+      <button type="button" id="missingBeersClearBtn" class="missing-beers-clear">Clear missing list</button>
+    </section>
     <section class="page-readme" aria-label="How this app works">
       <h2 class="page-readme-title">How it works</h2>
       <div class="page-readme-body">
@@ -64,6 +71,7 @@
         <p><strong>Drank / allowed.</strong> (1× 5% 40 cl + 2 cl / your chosen minutes after each drink; pauses after gaps.) Shown at the top as cl and approximate beers.</p>
         <p><strong>“Beers” line.</strong> Uses <strong>40 cl · 5,5%</strong> as the reference serving for those equivalents.</p>
         <p><strong>Pause note.</strong> When allowed stops increasing because you’re past the reference period after your last drink, the app adds a short <strong>log line</strong> so you can see when that happened.</p>
+        <p><strong>Missing from list.</strong> Names you want to add to the beer search database later are kept in the list below (saved on this device with the rest of the app data). Type the name in the search field, then tap <strong>+</strong> to append that text to the list. Use <strong>Clear missing list</strong> when you’ve added them to the database by hand.</p>
       </div>
     </section>
   </div>
