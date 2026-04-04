@@ -1453,13 +1453,12 @@ function updateSummary(data) {
   el.classList.remove("summary--pace-ok", "summary--pace-warn", "summary--pace-bad");
   el.classList.add(paceClass);
   el.innerHTML = `
-    <div class="summary-main">
-      <div class="summary-label">Drank / allowed</div>
-      <div class="summary-value summary-value--dark">${drank.toFixed(2).replace(".", ",")} / ${allowed.toFixed(2).replace(".", ",")} cl ${headroomParen}</div>
-      <div class="summary-beer-equiv summary-value--dark">≈ ${beersD.toFixed(2).replace(".", ",")} / ${beersA.toFixed(2).replace(".", ",")} beers ${headroomBeersParen}</div>
-    </div>
-    <div class="summary-face" aria-hidden="true">${paceFace}</div>
+    <div class="summary-label">Drank / allowed</div>
+    <div class="summary-value summary-value--dark">${drank.toFixed(2).replace(".", ",")} / ${allowed.toFixed(2).replace(".", ",")} cl ${headroomParen}</div>
+    <div class="summary-beer-equiv summary-value--dark">≈ ${beersD.toFixed(2).replace(".", ",")} / ${beersA.toFixed(2).replace(".", ",")} beers ${headroomBeersParen}</div>
   `;
+  const titleEmoji = document.getElementById("titlePaceEmoji");
+  if (titleEmoji) titleEmoji.textContent = paceFace;
   syncPresetMatrixButtonLabels(d);
 }
 

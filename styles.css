@@ -14,6 +14,11 @@ h1 {
   color: #1c1c1e;
 }
 
+.title-pace-emoji {
+  font-weight: 400;
+  margin-left: 0.15em;
+}
+
 .topbar,
 .matrix,
 .volume-panel,
@@ -315,11 +320,6 @@ h1 {
   border-radius: 10px;
   padding: 10px 12px;
   margin-bottom: 10px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px 14px;
-  container-type: inline-size;
 }
 
 #summary.summary--pace-ok {
@@ -337,25 +337,10 @@ h1 {
   border-color: #9e2228;
 }
 
-.summary-main {
-  flex: 1;
-  min-width: 0;
-}
-
 .summary-label {
   font-size: 11px;
   font-weight: 600;
   color: #1c1c1e;
-}
-
-.summary-face {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  font-size: 4rem;
-  font-size: clamp(2.75rem, 28cqi, 5.5rem);
 }
 
 .summary-label .summary-hint {
