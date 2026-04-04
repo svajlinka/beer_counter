@@ -65,21 +65,36 @@ function allowanceClPerMsFromData(data) {
 /** Drank/allowed auto-refresh: ~2 cl/h → hundredths change ~every 18s; 15s is a good balance vs 1s (no visible change at 2 decimals). */
 const SUMMARY_REFRESH_MS = 15 * 1000;
 
+function formatAbvComma(abv) {
+  return abv.toFixed(1).replace(".", ",");
+}
+
+/** Pure alcohol (cl) for preset grid labels and log lines. */
+function pureAlcoholClFromServing(abv, cl) {
+  return cl * (abv / 100);
+}
+
+function buildDefaultPresetLabel(abv, cl) {
+  const pure = pureAlcoholClFromServing(abv, cl);
+  const pureStr = pure.toFixed(2).replace(".", ",");
+  return `${formatAbvComma(abv)}% ${cl} cl (${pureStr} cl)`;
+}
+
 const DEFAULT_DRINKS = {
-  "3_16_5": { label: "3,5% · 20 cl", abv: 3.5, cl: 20 },
-  "3_33": { label: "3,5% · 33 cl", abv: 3.5, cl: 33 },
-  "3_40": { label: "3,5% · 40 cl", abv: 3.5, cl: 40 },
-  "3_50": { label: "3,5% · 50 cl", abv: 3.5, cl: 50 },
+  "3_16_5": { abv: 3.5, cl: 20, label: buildDefaultPresetLabel(3.5, 20) },
+  "3_33": { abv: 3.5, cl: 33, label: buildDefaultPresetLabel(3.5, 33) },
+  "3_40": { abv: 3.5, cl: 40, label: buildDefaultPresetLabel(3.5, 40) },
+  "3_50": { abv: 3.5, cl: 50, label: buildDefaultPresetLabel(3.5, 50) },
 
-  "4_16_5": { label: "4,5% · 20 cl", abv: 4.5, cl: 20 },
-  "4_33": { label: "4,5% · 33 cl", abv: 4.5, cl: 33 },
-  "4_40": { label: "4,5% · 40 cl", abv: 4.5, cl: 40 },
-  "4_50": { label: "4,5% · 50 cl", abv: 4.5, cl: 50 },
+  "4_16_5": { abv: 4.5, cl: 20, label: buildDefaultPresetLabel(4.5, 20) },
+  "4_33": { abv: 4.5, cl: 33, label: buildDefaultPresetLabel(4.5, 33) },
+  "4_40": { abv: 4.5, cl: 40, label: buildDefaultPresetLabel(4.5, 40) },
+  "4_50": { abv: 4.5, cl: 50, label: buildDefaultPresetLabel(4.5, 50) },
 
-  "5_16_5": { label: "5,5% · 20 cl", abv: 5.5, cl: 20 },
-  "5_33": { label: "5,5% · 33 cl", abv: 5.5, cl: 33 },
-  "5_40": { label: "5,5% · 40 cl", abv: 5.5, cl: 40 },
-  "5_50": { label: "5,5% · 50 cl", abv: 5.5, cl: 50 }
+  "5_16_5": { abv: 5.5, cl: 20, label: buildDefaultPresetLabel(5.5, 20) },
+  "5_33": { abv: 5.5, cl: 33, label: buildDefaultPresetLabel(5.5, 33) },
+  "5_40": { abv: 5.5, cl: 40, label: buildDefaultPresetLabel(5.5, 40) },
+  "5_50": { abv: 5.5, cl: 50, label: buildDefaultPresetLabel(5.5, 50) }
 };
 
 // Curated beer list. ABVs are typical retail averages.
@@ -598,6 +613,30 @@ const BEERS_SORTED = [...BEER_DB].sort((a, b) =>
   a.name.localeCompare(b.name, "sv", { sensitivity: "base" })
 );
 
+/** One search row per beer × serving (list pick adds that drink in one tap). */
+const BEER_LIST_SERVING_SIZES_CL = [20, 33, 40, 50];
+
+function expandBeerSearchRows(baseBeers) {
+  const out = [];
+  for (const b of baseBeers) {
+    for (const cl of BEER_LIST_SERVING_SIZES_CL) {
+      out.push({ name: b.name, abv: b.abv, cl });
+    }
+  }
+  out.sort((a, b) => {
+    const cmp = a.name.localeCompare(b.name, "sv", { sensitivity: "base" });
+    if (cmp !== 0) return cmp;
+    return a.cl - b.cl;
+  });
+  return out;
+}
+
+function formatBeerSearchResultLine(beer) {
+  const pure = pureAlcoholClFromServing(beer.abv, beer.cl);
+  const pureStr = pure.toFixed(2).replace(".", ",");
+  return `${escapeHtml(beer.name)} · ${formatAbvComma(beer.abv)}% · ${beer.cl} cl (${pureStr} cl)`;
+}
+
 /** Local calendar date (YYYY-MM-DD). Matches “today” for the user; avoids UTC midnight surprises from `toISOString()`. */
 function today() {
   const d = new Date();
@@ -860,8 +899,8 @@ function tryRequestPersistentStorage() {
 
 function searchBeers(query) {
   const q = query.trim().toLowerCase();
-  if (!q) return BEERS_SORTED;
-  return BEERS_SORTED.filter((b) => b.name.toLowerCase().includes(q));
+  const base = !q ? BEERS_SORTED : BEERS_SORTED.filter((b) => b.name.toLowerCase().includes(q));
+  return expandBeerSearchRows(base);
 }
 
 function renderResults(results) {
@@ -874,13 +913,13 @@ function renderResults(results) {
   el.innerHTML = results
     .map(
       (beer, idx) =>
-        `<div class="result-item" data-index="${idx}">${beer.name} · ${beer.abv.toFixed(1)}%</div>`
+        `<button type="button" class="result-item" data-index="${idx}">${formatBeerSearchResultLine(beer)}</button>`
     )
     .join("");
 
   Array.from(el.querySelectorAll(".result-item")).forEach((item, idx) => {
     item.addEventListener("mousedown", (e) => e.preventDefault());
-    item.addEventListener("click", () => setSelectedBeer(results[idx]));
+    item.addEventListener("click", () => addBeerFromDatabaseChoice(results[idx]));
   });
 }
 
@@ -924,14 +963,27 @@ function clearBeerSearchField() {
   }
 }
 
-function setSelectedBeer(beer) {
+function addBeerFromDatabaseChoice(beer) {
   const data = load();
-  data.selectedBeer = { name: beer.name, abv: beer.abv };
+  const label = labelForSpecificBeer(beer.name, beer.abv, beer.cl);
+  data.log.push({
+    date: today(),
+    time: nowTime(),
+    ts: Date.now(),
+    beerName: beer.name,
+    abv: beer.abv,
+    cl: beer.cl,
+    label
+  });
+  data.selectedBeer = defaultSelectedBeer();
+  syncSessionStartEntry(data);
+  sortLogNewestFirst(data.log);
   save(data);
-  document.getElementById("beerSearch").value = beerSearchDisplayLine(beer.name, beer.abv);
+  document.getElementById("beerSearch").value = "";
   renderResults([]);
   updateModeUI();
   updateSelectedBeerUI();
+  render();
 }
 
 function clearSelectedBeer() {
@@ -1047,10 +1099,6 @@ function getPureAlcoholCl(log) {
   return total;
 }
 
-function formatAbvComma(abv) {
-  return abv.toFixed(1).replace(".", ",");
-}
-
 function labelForSpecificBeer(name, abv, cl) {
   return `${formatAbvComma(abv)}% - ${cl} cl - ${name}`;
 }
@@ -1105,6 +1153,16 @@ function syncLogEditMatrixSelection() {
   if (!matrix) return;
   matrix.querySelectorAll("button[data-drink]").forEach((b) => {
     b.classList.toggle("log-edit-matrix-btn--selected", b.getAttribute("data-drink") === logEditDrinkKey);
+  });
+}
+
+function syncPresetMatrixButtonLabels() {
+  document.querySelectorAll("button[data-drink]").forEach((btn) => {
+    const key = btn.getAttribute("data-drink");
+    const d = DEFAULT_DRINKS[key];
+    if (!d) return;
+    const span = btn.querySelector("span");
+    if (span) span.textContent = buildDefaultPresetLabel(d.abv, d.cl);
   });
 }
 
@@ -1217,8 +1275,25 @@ function updateSummary(data) {
   if (diff > REF_BEER_PURE_CL + 0.001) paceClass = "summary--pace-bad";
   else if (diff > 0.001) paceClass = "summary--pace-warn";
 
+  const headroomCl = allowed - drank;
+  let headroomParen;
+  if (headroomCl >= -0.005) {
+    const h = Math.max(0, headroomCl);
+    headroomParen = `(+${h.toFixed(2).replace(".", ",")} cl left)`;
+  } else {
+    headroomParen = `(${headroomCl.toFixed(2).replace(".", ",")} cl over)`;
+  }
+
   const beersD = drank / REF_BEER_PURE_CL;
   const beersA = allowed / REF_BEER_PURE_CL;
+  const headroomBeers = headroomCl / REF_BEER_PURE_CL;
+  let headroomBeersParen;
+  if (headroomBeers >= -0.005) {
+    const b = Math.max(0, headroomBeers);
+    headroomBeersParen = `(+${b.toFixed(2).replace(".", ",")} beers left)`;
+  } else {
+    headroomBeersParen = `(${headroomBeers.toFixed(2).replace(".", ",")} beers over)`;
+  }
 
   const el = document.getElementById("summary");
   if (!el) return;
@@ -1226,8 +1301,8 @@ function updateSummary(data) {
   el.classList.add(paceClass);
   el.innerHTML = `
     <div class="summary-label">Drank / allowed <span class="summary-hint">(1× 5% 40 cl + 2 cl / ${refMin} min after each drink; pauses after gaps)</span></div>
-    <div class="summary-value summary-value--dark">${drank.toFixed(2)} / ${allowed.toFixed(2)} cl</div>
-    <div class="summary-beer-equiv summary-value--dark">≈ ${beersD.toFixed(2)} / ${beersA.toFixed(2)} beers <span class="summary-hint">(40 cl · 5,5%)</span></div>
+    <div class="summary-value summary-value--dark">${drank.toFixed(2).replace(".", ",")} / ${allowed.toFixed(2).replace(".", ",")} cl ${headroomParen}</div>
+    <div class="summary-beer-equiv summary-value--dark">≈ ${beersD.toFixed(2).replace(".", ",")} / ${beersA.toFixed(2).replace(".", ",")} beers ${headroomBeersParen} <span class="summary-hint">(40 cl · 5,5%)</span></div>
   `;
 }
 
@@ -1285,6 +1360,7 @@ function render() {
   document.getElementById("log").innerHTML = logHtml;
   const refInput = document.getElementById("referencePeriodInput");
   if (refInput) refInput.value = String(getReferencePeriodMinutes(data));
+  syncPresetMatrixButtonLabels();
   updateModeUI();
   updateSelectedBeerUI();
 }
