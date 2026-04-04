@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Beer Counter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h1>🍺 Beer Counter</h1>
+
+  <div id="summary"></div>
+
+  <div class="topbar">
+    <div class="beer-search-wrap">
+      <input id="beerSearch" type="text" placeholder="Tap to browse or type to filter…" autocomplete="off" />
+      <button type="button" id="beerSearchClear" class="beer-search-clear hidden" aria-label="Clear search" title="Clear">×</button>
+    </div>
+    <div id="searchResults" class="results"></div>
+  </div>
+
+  <div id="volumePanel" class="volume-panel hidden" aria-hidden="true">
+    <p class="volume-hint" id="volumeHint">Tap a serving size to add</p>
+    <div class="matrix volume-row">
+      <button type="button" data-custom-cl="20"><span>20 cl</span></button>
+      <button type="button" data-custom-cl="33"><span>33 cl</span></button>
+      <button type="button" data-custom-cl="40"><span>40 cl</span></button>
+      <button type="button" data-custom-cl="50"><span>50 cl</span></button>
+    </div>
+    <button type="button" id="clearBeerBtn" class="link-back">Use default 3,5/4,5/5,5% grid</button>
+  </div>
+
+  <div class="matrix matrix-drink-grid" id="drinkMatrix">
+    <button type="button" data-drink="3_16_5"><span>3,5% - 20 cl</span></button>
+    <button type="button" data-drink="3_33"><span>3,5% - 33 cl</span></button>
+    <button type="button" data-drink="3_40"><span>3,5% - 40 cl</span></button>
+    <button type="button" data-drink="3_50"><span>3,5% - 50 cl</span></button>
+    <button type="button" data-drink="4_16_5"><span>4,5% - 20 cl</span></button>
+    <button type="button" data-drink="4_33"><span>4,5% - 33 cl</span></button>
+    <button type="button" data-drink="4_40"><span>4,5% - 40 cl</span></button>
+    <button type="button" data-drink="4_50"><span>4,5% - 50 cl</span></button>
+    <button type="button" data-drink="5_16_5"><span>5,5% - 20 cl</span></button>
+    <button type="button" data-drink="5_33"><span>5,5% - 33 cl</span></button>
+    <button type="button" data-drink="5_40"><span>5,5% - 40 cl</span></button>
+    <button type="button" data-drink="5_50"><span>5,5% - 50 cl</span></button>
+  </div>
+
+  <div class="actions">
+    <button type="button" id="undoBtn" class="undo">Undo last</button>
+  </div>
+
+  <div id="log"></div>
+
+  <div class="bottom">
+    <div class="ref-period-block">
+      <label class="ref-period-label" for="referencePeriodInput">Reference period</label>
+      <p class="ref-period-hint">2 cl pure alcohol per chosen length; “Start” moves this far before your first drink. Pick 30–120 min (scroll wheel on iPhone). Change anytime.</p>
+      <select id="referencePeriodInput" class="ref-period-input" aria-label="Reference period in minutes"></select>
+    </div>
+    <button type="button" id="resetBtn" class="reset">Reset</button>
+  </div>
+
+  <div id="logEditBackdrop" class="log-edit-backdrop hidden" aria-hidden="true">
+    <div class="log-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="logEditTitle">
+      <h2 id="logEditTitle" class="log-edit-title">Edit drink</h2>
+      <div class="log-edit-fields">
+        <label class="log-edit-field">
+          <span class="log-edit-label">Date</span>
+          <input type="date" id="logEditDate" class="log-edit-input" />
+        </label>
+        <label class="log-edit-field">
+          <span class="log-edit-label">Time</span>
+          <input type="time" id="logEditTime" class="log-edit-input" />
+        </label>
+        <div class="log-edit-field">
+          <span class="log-edit-label">Strength & size</span>
+          <div id="logEditMatrix" class="matrix matrix-drink-grid log-edit-matrix" aria-label="ABV and volume">
+            <button type="button" data-drink="3_16_5"><span>3,5% - 20 cl</span></button>
+            <button type="button" data-drink="3_33"><span>3,5% - 33 cl</span></button>
+            <button type="button" data-drink="3_40"><span>3,5% - 40 cl</span></button>
+            <button type="button" data-drink="3_50"><span>3,5% - 50 cl</span></button>
+            <button type="button" data-drink="4_16_5"><span>4,5% - 20 cl</span></button>
+            <button type="button" data-drink="4_33"><span>4,5% - 33 cl</span></button>
+            <button type="button" data-drink="4_40"><span>4,5% - 40 cl</span></button>
+            <button type="button" data-drink="4_50"><span>4,5% - 50 cl</span></button>
+            <button type="button" data-drink="5_16_5"><span>5,5% - 20 cl</span></button>
+            <button type="button" data-drink="5_33"><span>5,5% - 33 cl</span></button>
+            <button type="button" data-drink="5_40"><span>5,5% - 40 cl</span></button>
+            <button type="button" data-drink="5_50"><span>5,5% - 50 cl</span></button>
+          </div>
+        </div>
+      </div>
+      <p id="logEditError" class="log-edit-error hidden" role="alert"></p>
+      <div class="log-edit-actions">
+        <button type="button" id="logEditCancel" class="log-edit-btn log-edit-btn--secondary">Cancel</button>
+        <button type="button" id="logEditSave" class="log-edit-btn log-edit-btn--primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
