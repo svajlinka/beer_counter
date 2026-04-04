@@ -215,6 +215,8 @@ h1 {
   justify-content: center;
   line-height: 1.15;
   min-height: 44px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .matrix button:active {
@@ -292,6 +294,8 @@ h1 {
   border: none;
   background: #2d7a32;
   color: #fff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #summary {
@@ -612,6 +616,8 @@ button.log-entry:active {
   border: none;
   background: #c42b2b;
   color: #fff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .page-readme {
