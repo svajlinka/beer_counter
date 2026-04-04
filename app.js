@@ -924,20 +924,6 @@ function load() {
     dirty = true;
   }
 
-  if (data.date !== today()) {
-    const keptRef =
-      normalizeReferencePeriodMinutes(data.referencePeriodMinutes) ?? DEFAULT_REFERENCE_PERIOD_MINUTES;
-    const keptMissing = Array.isArray(data.missingBeers) ? data.missingBeers : [];
-    data = {
-      date: today(),
-      log: [],
-      selectedBeer: defaultSelectedBeer(),
-      referencePeriodMinutes: snapReferencePeriodToPickerChoice(keptRef),
-      missingBeers: keptMissing
-    };
-    dirty = true;
-  }
-
   if (migrateLogEntries(data)) dirty = true;
   const refRaw =
     normalizeReferencePeriodMinutes(data.referencePeriodMinutes) ?? DEFAULT_REFERENCE_PERIOD_MINUTES;
@@ -1433,8 +1419,14 @@ function updateSummary(data) {
   const allowed = getAllowedPureAlcoholCl(d.log, d);
   const diff = drank - allowed;
   let paceClass = "summary--pace-ok";
-  if (diff > REF_BEER_PURE_CL + 0.001) paceClass = "summary--pace-bad";
-  else if (diff > 0.001) paceClass = "summary--pace-warn";
+  let paceFace = "\u{1F60A}"; /* SMILING FACE WITH SMILING EYES */
+  if (diff > REF_BEER_PURE_CL + 0.001) {
+    paceClass = "summary--pace-bad";
+    paceFace = "\u{1F621}"; /* POUTING FACE */
+  } else if (diff > 0.001) {
+    paceClass = "summary--pace-warn";
+    paceFace = "\u{1F610}"; /* NEUTRAL FACE */
+  }
 
   const headroomCl = allowed - drank;
   let headroomParen;
@@ -1461,9 +1453,12 @@ function updateSummary(data) {
   el.classList.remove("summary--pace-ok", "summary--pace-warn", "summary--pace-bad");
   el.classList.add(paceClass);
   el.innerHTML = `
-    <div class="summary-label">Drank / allowed</div>
-    <div class="summary-value summary-value--dark">${drank.toFixed(2).replace(".", ",")} / ${allowed.toFixed(2).replace(".", ",")} cl ${headroomParen}</div>
-    <div class="summary-beer-equiv summary-value--dark">≈ ${beersD.toFixed(2).replace(".", ",")} / ${beersA.toFixed(2).replace(".", ",")} beers ${headroomBeersParen}</div>
+    <div class="summary-main">
+      <div class="summary-label">Drank / allowed</div>
+      <div class="summary-value summary-value--dark">${drank.toFixed(2).replace(".", ",")} / ${allowed.toFixed(2).replace(".", ",")} cl ${headroomParen}</div>
+      <div class="summary-beer-equiv summary-value--dark">≈ ${beersD.toFixed(2).replace(".", ",")} / ${beersA.toFixed(2).replace(".", ",")} beers ${headroomBeersParen}</div>
+    </div>
+    <div class="summary-face" aria-hidden="true">${paceFace}</div>
   `;
   syncPresetMatrixButtonLabels(d);
 }

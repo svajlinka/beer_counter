@@ -48,7 +48,7 @@
   </div>
 
   <div class="actions">
-    <button type="button" id="undoBtn" class="undo">Undo last</button>
+    <button type="button" id="undoBtn" class="undo">↩️ Undo last</button>
   </div>
 
   <div id="log"></div>
@@ -64,15 +64,40 @@
       <ul id="missingBeersList" class="missing-beers-list"></ul>
       <button type="button" id="missingBeersClearBtn" class="missing-beers-clear">Clear missing list</button>
     </section>
-    <section class="page-readme" aria-label="How this app works">
-      <h2 class="page-readme-title">How it works</h2>
+    <section class="page-readme" aria-labelledby="readmeTitle">
+      <h2 id="readmeTitle" class="page-readme-title">Read me</h2>
       <div class="page-readme-body">
-        <p><strong>Reference period.</strong> 2 cl pure alcohol per this length, counted only within this many minutes after each logged drink (timestamps on the log; long gaps pause accrual until the next entry). Pick 30–120 min. Change anytime.</p>
-        <p><strong>Drank / allowed.</strong> (1× 5% 40 cl + 2 cl / your chosen minutes after each drink; pauses after gaps.) Shown at the top as cl and approximate beers.</p>
-        <p><strong>“Beers” line.</strong> Uses <strong>40 cl · 5,5%</strong> as the reference serving for those equivalents.</p>
-        <p><strong>Pause note.</strong> When allowed stops increasing because you’re past the reference period after your last drink, the app adds a short <strong>log line</strong> so you can see when that happened.</p>
-        <p><strong>Default grid colours.</strong> <strong>Green</strong> = that drink would stay at or under allowed; <strong>yellow</strong> = over allowed by at most 2 cl pure; <strong>red</strong> = more than 2 cl pure over. Before your first drink of the day, all presets show green.</p>
-        <p><strong>Missing from list.</strong> Names you want to add to the beer search database later are kept in the list below (saved on this device with the rest of the app data). Type the name in the search field, then tap <strong>+</strong> to append that text to the list. Use <strong>Clear missing list</strong> when you’ve added them to the database by hand.</p>
+        <p class="page-readme-lede">
+          Beer Counter helps you log what you drink and compares it to a simple <strong>pace limit</strong> based on pure alcohol (ethanol) and a <strong>reference period</strong> you choose. Everything runs in the browser; your data stays on this device unless you clear site storage.
+        </p>
+
+        <h3 class="page-readme-subtitle">How to use</h3>
+        <ul class="page-readme-list">
+          <li><strong>Quick presets.</strong> Tap a cell in the strength × size grid (3,5% / 4,5% / 5,5% and 20–50 cl) to log a drink with that ABV and volume.</li>
+          <li><strong>Named beers.</strong> Open the search field, type to filter (or leave it empty to browse). Each beer appears as four rows (20, 33, 40, 50 cl). Tap a row to log it in one step.</li>
+          <li><strong>Summary.</strong> At the top, <strong>Drank / allowed</strong> shows pure alcohol in cl and approximate “beers” (40 cl · 5,5% reference). Parentheses show how much room you have left, or how far over you are.</li>
+          <li><strong>Log.</strong> Newest entries appear first. Tap a line to edit date, time, or preset. <strong>Undo last</strong> removes the most recent entry.</li>
+          <li><strong>Reference period.</strong> Use the dropdown (30–120 minutes) to set how fast <strong>allowed</strong> grows during active drinking windows. You can change it anytime; the app recalculates.</li>
+          <li><strong>Reset.</strong> Clears today’s drink log only (not your missing-beer wish list).</li>
+          <li><strong>Missing from list.</strong> Type a name in the search field and tap <strong>+</strong> to save it for later (e.g. to add to the database). <strong>Clear missing list</strong> removes all saved names after you’ve handled them.</li>
+        </ul>
+
+        <h3 class="page-readme-subtitle">Logic and rules</h3>
+        <ul class="page-readme-list">
+          <li><strong>Pure alcohol.</strong> Each drink is converted to centilitres of pure alcohol: volume × ABV. That is what <strong>drank</strong> and <strong>allowed</strong> compare.</li>
+          <li><strong>Allowed curve.</strong> When you have at least one drink logged, <strong>allowed</strong> includes a one-time <strong>2 cl</strong> head start (same pure alcohol as one 5% · 40 cl), plus <strong>2 cl per reference period</strong> of eligible time.</li>
+          <li><strong>Time windows.</strong> Eligible time counts only inside <strong>reference-period–long intervals</strong> that start at each drink’s logged time. If intervals overlap (several drinks close together), they merge. After the last interval ends, <strong>allowed</strong> stops rising until you log another drink—so a long break does not keep earning allowance.</li>
+          <li><strong>Pause marker.</strong> When the app detects that allowance has stopped increasing for that reason, it may add a neutral line to the log (not a drink) marking when that pause started.</li>
+          <li><strong>Summary colours.</strong> The summary card is green when you are at or under allowed; yellow if you are over by up to one reference “beer” (2,2 cl pure, i.e. 40 cl · 5,5%); red if further over.</li>
+          <li><strong>Preset grid colours.</strong> Each preset button is tinted <strong>green</strong> if logging it would keep you at or under allowed, <strong>yellow</strong> if it would put you over by at most 2 cl pure, and <strong>red</strong> if more than 2 cl over. Before the first drink of the day, all presets show green.</li>
+        </ul>
+
+        <h3 class="page-readme-subtitle">Features and notes</h3>
+        <ul class="page-readme-list">
+          <li><strong>Persistence.</strong> Log, settings, and missing-beer names are stored locally (browser storage). They survive closing the tab, but not another device or a cleared browser profile.</li>
+          <li><strong>No automatic daily reset.</strong> The drink log stays until you tap <strong>Reset</strong> (or clear site data). Reference period and missing-beer list are not cleared by Reset.</li>
+          <li><strong>Not medical advice.</strong> The limits are a personal planning tool, not a safety or health guideline.</li>
+        </ul>
       </div>
     </section>
   </div>
