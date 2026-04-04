@@ -1016,13 +1016,21 @@ function beerSearchQueryForFilter(raw) {
 }
 
 function syncBeerSearchClearVisibility() {
-  const btn = document.getElementById("beerSearchClear");
-  if (!btn) return;
+  const clearBtn = document.getElementById("beerSearchClear");
+  const addBtn = document.getElementById("beerSearchAdd");
+  const searchEl = document.getElementById("beerSearch");
+  if (!searchEl) return;
   const data = load();
-  const hasText = document.getElementById("beerSearch").value.trim().length > 0;
+  const hasText = searchEl.value.trim().length > 0;
   const show = hasText || hasCustomBeer(data);
-  btn.classList.toggle("hidden", !show);
-  btn.setAttribute("aria-hidden", String(!show));
+  if (clearBtn) {
+    clearBtn.classList.toggle("hidden", !show);
+    clearBtn.setAttribute("aria-hidden", String(!show));
+  }
+  if (addBtn) {
+    addBtn.classList.toggle("hidden", !show);
+    addBtn.setAttribute("aria-hidden", String(!show));
+  }
 }
 
 function clearBeerSearchField() {

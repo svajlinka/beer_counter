@@ -66,15 +66,15 @@ h1 {
   right: 42px;
   top: 50%;
   transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   box-sizing: border-box;
   border: 1px solid #c7c7cc;
   border-radius: 8px;
   background: transparent;
   color: #0071e3;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
