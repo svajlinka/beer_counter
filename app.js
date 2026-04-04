@@ -750,12 +750,41 @@ function getFirstDrinkTimestamp(log) {
   return min === Infinity ? null : min;
 }
 
+/** Length of merged [ts, ts + P] ∩ (-∞, now] over all drinks; accrual only inside these windows. */
+function getActiveAccrualWindowMs(log, data, nowMs) {
+  const P = getReferencePeriodMs(data);
+  const intervals = [];
+  for (const e of log) {
+    if (e.kind === "start") continue;
+    if (typeof e.ts !== "number" || !Number.isFinite(e.ts)) continue;
+    const end = Math.min(nowMs, e.ts + P);
+    if (end <= e.ts) continue;
+    intervals.push([e.ts, end]);
+  }
+  if (intervals.length === 0) return 0;
+  intervals.sort((a, b) => a[0] - b[0]);
+  let curL = intervals[0][0];
+  let curR = intervals[0][1];
+  let sum = 0;
+  for (let i = 1; i < intervals.length; i++) {
+    const L = intervals[i][0];
+    const R = intervals[i][1];
+    if (L <= curR) {
+      curR = Math.max(curR, R);
+    } else {
+      sum += curR - curL;
+      curL = L;
+      curR = R;
+    }
+  }
+  sum += curR - curL;
+  return sum;
+}
+
 function getAllowedPureAlcoholCl(log, data, nowMs = Date.now()) {
-  const t0 = getFirstDrinkTimestamp(log);
-  if (t0 == null) return 0;
-  return (
-    INITIAL_ALLOWANCE_PURE_CL + Math.max(0, nowMs - t0) * allowanceClPerMsFromData(data)
-  );
+  if (getFirstDrinkTimestamp(log) == null) return 0;
+  const windowMs = getActiveAccrualWindowMs(log, data, nowMs);
+  return INITIAL_ALLOWANCE_PURE_CL + windowMs * allowanceClPerMsFromData(data);
 }
 
 function defaultSelectedBeer() {
@@ -1196,7 +1225,7 @@ function updateSummary(data) {
   el.classList.remove("summary--pace-ok", "summary--pace-warn", "summary--pace-bad");
   el.classList.add(paceClass);
   el.innerHTML = `
-    <div class="summary-label">Drank / allowed <span class="summary-hint">(from first drink: 1× 5% 40 cl + 2 cl / ${refMin} min)</span></div>
+    <div class="summary-label">Drank / allowed <span class="summary-hint">(1× 5% 40 cl + 2 cl / ${refMin} min after each drink; pauses after gaps)</span></div>
     <div class="summary-value summary-value--dark">${drank.toFixed(2)} / ${allowed.toFixed(2)} cl</div>
     <div class="summary-beer-equiv summary-value--dark">≈ ${beersD.toFixed(2)} / ${beersA.toFixed(2)} beers <span class="summary-hint">(40 cl · 5,5%)</span></div>
   `;
