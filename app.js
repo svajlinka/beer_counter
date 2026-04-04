@@ -69,32 +69,34 @@ function formatAbvComma(abv) {
   return abv.toFixed(1).replace(".", ",");
 }
 
-/** Pure alcohol (cl) for preset grid labels and log lines. */
+/** Pure alcohol (cl) for calculations and search results. */
 function pureAlcoholClFromServing(abv, cl) {
   return cl * (abv / 100);
 }
 
-function buildDefaultPresetLabel(abv, cl) {
-  const pure = pureAlcoholClFromServing(abv, cl);
-  const pureStr = pure.toFixed(2).replace(".", ",");
-  return `${formatAbvComma(abv)}% ${cl} cl (${pureStr} cl)`;
+/** Short label for default grid buttons and matching log lines. */
+function defaultPresetDrinkLabel(abv, cl) {
+  return `${formatAbvComma(abv)}% ${cl} cl`;
 }
 
+/** Yellow band: over allowed by at most this many cl pure (same as 5% · 40 cl head start). */
+const PRESET_OVER_WARN_MAX_CL = 2;
+
 const DEFAULT_DRINKS = {
-  "3_16_5": { abv: 3.5, cl: 20, label: buildDefaultPresetLabel(3.5, 20) },
-  "3_33": { abv: 3.5, cl: 33, label: buildDefaultPresetLabel(3.5, 33) },
-  "3_40": { abv: 3.5, cl: 40, label: buildDefaultPresetLabel(3.5, 40) },
-  "3_50": { abv: 3.5, cl: 50, label: buildDefaultPresetLabel(3.5, 50) },
+  "3_16_5": { abv: 3.5, cl: 20, label: defaultPresetDrinkLabel(3.5, 20) },
+  "3_33": { abv: 3.5, cl: 33, label: defaultPresetDrinkLabel(3.5, 33) },
+  "3_40": { abv: 3.5, cl: 40, label: defaultPresetDrinkLabel(3.5, 40) },
+  "3_50": { abv: 3.5, cl: 50, label: defaultPresetDrinkLabel(3.5, 50) },
 
-  "4_16_5": { abv: 4.5, cl: 20, label: buildDefaultPresetLabel(4.5, 20) },
-  "4_33": { abv: 4.5, cl: 33, label: buildDefaultPresetLabel(4.5, 33) },
-  "4_40": { abv: 4.5, cl: 40, label: buildDefaultPresetLabel(4.5, 40) },
-  "4_50": { abv: 4.5, cl: 50, label: buildDefaultPresetLabel(4.5, 50) },
+  "4_16_5": { abv: 4.5, cl: 20, label: defaultPresetDrinkLabel(4.5, 20) },
+  "4_33": { abv: 4.5, cl: 33, label: defaultPresetDrinkLabel(4.5, 33) },
+  "4_40": { abv: 4.5, cl: 40, label: defaultPresetDrinkLabel(4.5, 40) },
+  "4_50": { abv: 4.5, cl: 50, label: defaultPresetDrinkLabel(4.5, 50) },
 
-  "5_16_5": { abv: 5.5, cl: 20, label: buildDefaultPresetLabel(5.5, 20) },
-  "5_33": { abv: 5.5, cl: 33, label: buildDefaultPresetLabel(5.5, 33) },
-  "5_40": { abv: 5.5, cl: 40, label: buildDefaultPresetLabel(5.5, 40) },
-  "5_50": { abv: 5.5, cl: 50, label: buildDefaultPresetLabel(5.5, 50) }
+  "5_16_5": { abv: 5.5, cl: 20, label: defaultPresetDrinkLabel(5.5, 20) },
+  "5_33": { abv: 5.5, cl: 33, label: defaultPresetDrinkLabel(5.5, 33) },
+  "5_40": { abv: 5.5, cl: 40, label: defaultPresetDrinkLabel(5.5, 40) },
+  "5_50": { abv: 5.5, cl: 50, label: defaultPresetDrinkLabel(5.5, 50) }
 };
 
 // Curated beer list. ABVs are typical retail averages.
@@ -1294,13 +1296,29 @@ function syncLogEditMatrixSelection() {
   });
 }
 
-function syncPresetMatrixButtonLabels() {
+function syncPresetMatrixButtonLabels(data) {
+  const d = data ?? load();
+  const drank = getPureAlcoholCl(d.log);
+  const allowedEffective =
+    getFirstDrinkTimestamp(d.log) == null ? Infinity : getAllowedPureAlcoholCl(d.log, d);
+
   document.querySelectorAll("button[data-drink]").forEach((btn) => {
     const key = btn.getAttribute("data-drink");
-    const d = DEFAULT_DRINKS[key];
-    if (!d) return;
+    const preset = DEFAULT_DRINKS[key];
+    if (!preset) return;
     const span = btn.querySelector("span");
-    if (span) span.textContent = buildDefaultPresetLabel(d.abv, d.cl);
+    if (span) span.textContent = defaultPresetDrinkLabel(preset.abv, preset.cl);
+
+    const pure = pureAlcoholClFromServing(preset.abv, preset.cl);
+    const after = drank + pure;
+    btn.classList.remove("preset-pace--ok", "preset-pace--warn", "preset-pace--bad");
+    if (after <= allowedEffective + 0.001) {
+      btn.classList.add("preset-pace--ok");
+    } else if (after - allowedEffective <= PRESET_OVER_WARN_MAX_CL + 0.001) {
+      btn.classList.add("preset-pace--warn");
+    } else {
+      btn.classList.add("preset-pace--bad");
+    }
   });
 }
 
@@ -1447,6 +1465,7 @@ function updateSummary(data) {
     <div class="summary-value summary-value--dark">${drank.toFixed(2).replace(".", ",")} / ${allowed.toFixed(2).replace(".", ",")} cl ${headroomParen}</div>
     <div class="summary-beer-equiv summary-value--dark">≈ ${beersD.toFixed(2).replace(".", ",")} / ${beersA.toFixed(2).replace(".", ",")} beers ${headroomBeersParen}</div>
   `;
+  syncPresetMatrixButtonLabels(d);
 }
 
 function ensureReferencePeriodSelectOptions() {
@@ -1505,7 +1524,7 @@ function render() {
   document.getElementById("log").innerHTML = logHtml;
   const refInput = document.getElementById("referencePeriodInput");
   if (refInput) refInput.value = String(getReferencePeriodMinutes(data));
-  syncPresetMatrixButtonLabels();
+  syncPresetMatrixButtonLabels(data);
   renderMissingBeersList();
   updateModeUI();
   updateSelectedBeerUI();
