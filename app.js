@@ -664,11 +664,15 @@ function readPersistedData() {
   return data || {};
 }
 
+function isSyntheticLogEntry(e) {
+  return Boolean(e && (e.kind === "start" || e.kind === "accrual_paused"));
+}
+
 function inferSessionDateFromLog(log) {
   let bestTs = -Infinity;
   let bestDate = null;
   for (const e of log) {
-    if (!e || e.kind === "start") continue;
+    if (!e || isSyntheticLogEntry(e)) continue;
     const ts = typeof e.ts === "number" && Number.isFinite(e.ts) ? e.ts : null;
     const d = e.date && /^\d{4}-\d{2}-\d{2}$/.test(e.date) ? e.date : null;
     if (ts != null && d && ts >= bestTs) {
@@ -783,10 +787,81 @@ function getFirstDrinkTimestamp(log) {
   if (!log.length) return null;
   let min = Infinity;
   for (const e of log) {
-    if (e.kind === "start") continue;
+    if (isSyntheticLogEntry(e)) continue;
     if (typeof e.ts === "number" && Number.isFinite(e.ts)) min = Math.min(min, e.ts);
   }
   return min === Infinity ? null : min;
+}
+
+function tsToLocalDateAndTime(ms) {
+  const d = new Date(ms);
+  return {
+    date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+    time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+  };
+}
+
+/** Full [ts, ts + P] intervals for real drinks (merged for gap / pause detection). */
+function getMergedRawAccrualIntervals(log, data) {
+  const P = getReferencePeriodMs(data);
+  const intervals = [];
+  for (const e of log) {
+    if (isSyntheticLogEntry(e)) continue;
+    if (typeof e.ts !== "number" || !Number.isFinite(e.ts)) continue;
+    intervals.push([e.ts, e.ts + P]);
+  }
+  if (intervals.length === 0) return [];
+  intervals.sort((a, b) => a[0] - b[0]);
+  const merged = [];
+  let cs = intervals[0][0];
+  let ce = intervals[0][1];
+  for (let i = 1; i < intervals.length; i++) {
+    const s = intervals[i][0];
+    const e = intervals[i][1];
+    if (s <= ce) ce = Math.max(ce, e);
+    else {
+      merged.push([cs, ce]);
+      cs = s;
+      ce = e;
+    }
+  }
+  merged.push([cs, ce]);
+  return merged;
+}
+
+/** If allowed is not accruing at nowMs, ms when the current pause began; else null. */
+function getActiveAccrualPauseSinceMs(log, data, nowMs) {
+  const merged = getMergedRawAccrualIntervals(log, data);
+  if (!merged.length) return null;
+  for (const [a, b] of merged) {
+    if (nowMs >= a && nowMs <= b) return null;
+  }
+  let best = null;
+  for (const [, b] of merged) {
+    if (b < nowMs && (best === null || b > best)) best = b;
+  }
+  return best;
+}
+
+/** Appends one log line when accrual has stopped after the reference period past the last active window. */
+function syncAccrualPauseLogEntry(data, nowMs = Date.now()) {
+  if (getFirstDrinkTimestamp(data.log) == null) return false;
+  const pauseSince = getActiveAccrualPauseSinceMs(data.log, data, nowMs);
+  if (pauseSince === null) return false;
+  if (data.log.some((e) => e.kind === "accrual_paused" && e.pauseSinceMs === pauseSince)) return false;
+  const { date, time } = tsToLocalDateAndTime(pauseSince);
+  data.log.push({
+    kind: "accrual_paused",
+    pauseSinceMs: pauseSince,
+    date,
+    time,
+    ts: pauseSince,
+    beerName: "",
+    abv: 0,
+    cl: 0,
+    label: "Allowed pace paused — log a drink to continue"
+  });
+  return true;
 }
 
 /** Length of merged [ts, ts + P] ∩ (-∞, now] over all drinks; accrual only inside these windows. */
@@ -794,7 +869,7 @@ function getActiveAccrualWindowMs(log, data, nowMs) {
   const P = getReferencePeriodMs(data);
   const intervals = [];
   for (const e of log) {
-    if (e.kind === "start") continue;
+    if (isSyntheticLogEntry(e)) continue;
     if (typeof e.ts !== "number" || !Number.isFinite(e.ts)) continue;
     const end = Math.min(nowMs, e.ts + P);
     if (end <= e.ts) continue;
@@ -865,6 +940,10 @@ function load() {
   }
   if (sortLogNewestFirst(data.log)) dirty = true;
   if (syncSessionStartEntry(data)) {
+    dirty = true;
+    sortLogNewestFirst(data.log);
+  }
+  if (syncAccrualPauseLogEntry(data)) {
     dirty = true;
     sortLogNewestFirst(data.log);
   }
@@ -1093,7 +1172,7 @@ function resetDay() {
 function getPureAlcoholCl(log) {
   let total = 0;
   log.forEach((entry) => {
-    if (entry.kind === "start") return;
+    if (isSyntheticLogEntry(entry)) return;
     total += entry.cl * (entry.abv / 100);
   });
   return total;
@@ -1138,7 +1217,7 @@ let logEditIndex = null;
 let logEditDrinkKey = null;
 
 function findDefaultDrinkKeyForEntry(entry) {
-  if (entry.kind === "start") return null;
+  if (isSyntheticLogEntry(entry)) return null;
   for (const key of Object.keys(DEFAULT_DRINKS)) {
     const d = DEFAULT_DRINKS[key];
     if (Math.abs(d.abv - entry.abv) < 1e-6 && Math.abs(d.cl - entry.cl) < 1e-6) {
@@ -1176,7 +1255,7 @@ function setLogEditError(msg) {
 function openLogEditor(index) {
   const data = load();
   const entry = data.log[index];
-  if (!entry || entry.kind === "start") return;
+  if (!entry || isSyntheticLogEntry(entry)) return;
 
   logEditIndex = index;
   logEditDrinkKey = findDefaultDrinkKeyForEntry(entry);
@@ -1218,7 +1297,7 @@ function saveLogEdit() {
     closeLogEditor();
     return;
   }
-  if (entry.kind === "start") {
+  if (isSyntheticLogEntry(entry)) {
     closeLogEditor();
     return;
   }
@@ -1267,7 +1346,12 @@ function saveLogEdit() {
 
 function updateSummary(data) {
   const d = data ?? load();
-  const refMin = getReferencePeriodMinutes(d);
+  if (syncAccrualPauseLogEntry(d)) {
+    save(d);
+    render();
+    return;
+  }
+
   const drank = getPureAlcoholCl(d.log);
   const allowed = getAllowedPureAlcoholCl(d.log, d);
   const diff = drank - allowed;
@@ -1300,9 +1384,9 @@ function updateSummary(data) {
   el.classList.remove("summary--pace-ok", "summary--pace-warn", "summary--pace-bad");
   el.classList.add(paceClass);
   el.innerHTML = `
-    <div class="summary-label">Drank / allowed <span class="summary-hint">(1× 5% 40 cl + 2 cl / ${refMin} min after each drink; pauses after gaps)</span></div>
+    <div class="summary-label">Drank / allowed</div>
     <div class="summary-value summary-value--dark">${drank.toFixed(2).replace(".", ",")} / ${allowed.toFixed(2).replace(".", ",")} cl ${headroomParen}</div>
-    <div class="summary-beer-equiv summary-value--dark">≈ ${beersD.toFixed(2).replace(".", ",")} / ${beersA.toFixed(2).replace(".", ",")} beers ${headroomBeersParen} <span class="summary-hint">(40 cl · 5,5%)</span></div>
+    <div class="summary-beer-equiv summary-value--dark">≈ ${beersD.toFixed(2).replace(".", ",")} / ${beersA.toFixed(2).replace(".", ",")} beers ${headroomBeersParen}</div>
   `;
 }
 
@@ -1351,6 +1435,8 @@ function render() {
       const line = `${escapeHtml(formatEntryWhenForDisplay(entry))} - ${escapeHtml(entry.label)}`;
       if (entry.kind === "start") {
         logHtml += `<div class="log-entry log-entry--start">${line}</div>`;
+      } else if (entry.kind === "accrual_paused") {
+        logHtml += `<div class="log-entry log-entry--pause">${line}</div>`;
       } else {
         logHtml += `<button type="button" class="log-entry" data-log-index="${idx}">${line}</button>`;
       }

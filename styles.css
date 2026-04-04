@@ -320,7 +320,8 @@ button.log-entry:active {
   background: #f2f2f7;
 }
 
-.log-entry--start {
+.log-entry--start,
+.log-entry--pause {
   background: #f2f2f7;
   color: #636366;
   font-style: italic;
@@ -519,4 +520,35 @@ button.log-entry:active {
   border: none;
   background: #c42b2b;
   color: #fff;
+}
+
+.page-readme {
+  margin-top: 16px;
+  padding: 12px 14px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #c7c7cc;
+  border-radius: 10px;
+}
+
+.page-readme-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1c1c1e;
+  text-align: left;
+}
+
+.page-readme-body {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #3a3a3c;
+}
+
+.page-readme-body p {
+  margin: 0 0 10px;
+}
+
+.page-readme-body p:last-child {
+  margin-bottom: 0;
 }

@@ -53,11 +53,19 @@
 
   <div class="bottom">
     <div class="ref-period-block">
-      <label class="ref-period-label" for="referencePeriodInput">Reference period</label>
-      <p class="ref-period-hint">2 cl pure alcohol per this length, counted only within this many minutes after each logged drink (timestamps on the log; long gaps pause accrual until the next entry). Pick 30–120 min. Change anytime.</p>
+      <label class="ref-period-label" for="referencePeriodInput">Reference period (minutes)</label>
       <select id="referencePeriodInput" class="ref-period-input" aria-label="Reference period in minutes"></select>
     </div>
     <button type="button" id="resetBtn" class="reset">Reset</button>
+    <section class="page-readme" aria-label="How this app works">
+      <h2 class="page-readme-title">How it works</h2>
+      <div class="page-readme-body">
+        <p><strong>Reference period.</strong> 2 cl pure alcohol per this length, counted only within this many minutes after each logged drink (timestamps on the log; long gaps pause accrual until the next entry). Pick 30–120 min. Change anytime.</p>
+        <p><strong>Drank / allowed.</strong> (1× 5% 40 cl + 2 cl / your chosen minutes after each drink; pauses after gaps.) Shown at the top as cl and approximate beers.</p>
+        <p><strong>“Beers” line.</strong> Uses <strong>40 cl · 5,5%</strong> as the reference serving for those equivalents.</p>
+        <p><strong>Pause note.</strong> When allowed stops increasing because you’re past the reference period after your last drink, the app adds a short <strong>log line</strong> so you can see when that happened.</p>
+      </div>
+    </section>
   </div>
 
   <div id="logEditBackdrop" class="log-edit-backdrop hidden" aria-hidden="true">
