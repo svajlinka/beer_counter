@@ -224,18 +224,18 @@ h1 {
 }
 
 #summary.summary--pace-ok {
-  background: #d8f0dc;
-  border-color: #2d7a32;
+  background: #b8dfc2;
+  border-color: #1f5c26;
 }
 
 #summary.summary--pace-warn {
-  background: #fff3cd;
-  border-color: #d9a006;
+  background: #edd78f;
+  border-color: #a67a00;
 }
 
 #summary.summary--pace-bad {
-  background: #f8d7da;
-  border-color: #c42b2b;
+  background: #e8b9bf;
+  border-color: #9e2228;
 }
 
 .summary-label {
