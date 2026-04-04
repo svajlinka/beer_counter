@@ -1,6 +1,6 @@
 const KEY = "beer_counter_v13";
 
-/** Default reference period (minutes): 2 cl pure allowed per this span; “Start” is this many minutes before first drink. */
+/** Default reference period (minutes): 2 cl pure allowed per this span (pace from first logged drink). */
 const DEFAULT_REFERENCE_PERIOD_MINUTES = 90;
 
 /** Picker range (minutes). Native `<select>` uses the iOS scroll wheel; desktop shows a dropdown. */
@@ -20,6 +20,11 @@ const REFERENCE_PERIOD_CHOICES = (() => {
 const REF_BEER_CL = 40;
 const REF_BEER_ABV = 5.5;
 const REF_BEER_PURE_CL = REF_BEER_CL * (REF_BEER_ABV / 100);
+
+/** Allowed starts at this much pure alcohol (one 5% · 40 cl), then grows with the reference period. */
+const INITIAL_ALLOWANCE_BEER_CL = 40;
+const INITIAL_ALLOWANCE_BEER_ABV = 5;
+const INITIAL_ALLOWANCE_PURE_CL = INITIAL_ALLOWANCE_BEER_CL * (INITIAL_ALLOWANCE_BEER_ABV / 100);
 
 function normalizeReferencePeriodMinutes(n) {
   if (typeof n !== "number" || !Number.isFinite(n)) return null;
@@ -720,69 +725,16 @@ function isDateTimeStrictlyInFuture(dateYmd, hhmm) {
   return parseAtDateTime(dateYmd, hhmm) > Date.now();
 }
 
-function ymdLocalFromTs(ms) {
-  const d = new Date(ms);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function hmLocalFromTs(ms) {
-  const d = new Date(ms);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
-/** One synthetic "Start" row (reference period minutes) before the earliest real drink; removed when no drinks left. */
+/** Removes legacy synthetic “Start” rows. Allowed pace is measured from the first real drink timestamp. */
 function syncSessionStartEntry(data) {
   const log = data.log;
   let changed = false;
-
   const startIndices = [];
   for (let i = 0; i < log.length; i++) {
     if (log[i].kind === "start") startIndices.push(i);
   }
-  if (startIndices.length > 1) {
-    for (let k = startIndices.length - 1; k >= 1; k--) {
-      log.splice(startIndices[k], 1);
-      changed = true;
-    }
-  }
-
-  let startIdx = log.findIndex((e) => e.kind === "start");
-  const real = log.filter((e) => e.kind !== "start");
-
-  if (real.length === 0) {
-    if (startIdx !== -1) {
-      log.splice(startIdx, 1);
-      return true;
-    }
-    return changed;
-  }
-
-  let minTs = Infinity;
-  for (const e of real) {
-    if (typeof e.ts === "number" && Number.isFinite(e.ts)) minTs = Math.min(minTs, e.ts);
-  }
-  if (minTs === Infinity) return changed;
-
-  const startTs = minTs - getReferencePeriodMs(data);
-  const payload = {
-    kind: "start",
-    date: ymdLocalFromTs(startTs),
-    time: hmLocalFromTs(startTs),
-    ts: startTs,
-    beerName: "",
-    abv: 0,
-    cl: 0,
-    label: "Start"
-  };
-
-  startIdx = log.findIndex((e) => e.kind === "start");
-  if (startIdx === -1) {
-    log.push(payload);
-    return true;
-  }
-  const cur = log[startIdx];
-  if (cur.ts !== startTs || cur.date !== payload.date || cur.time !== payload.time) {
-    Object.assign(cur, payload);
+  for (let k = startIndices.length - 1; k >= 0; k--) {
+    log.splice(startIndices[k], 1);
     changed = true;
   }
   return changed;
@@ -792,6 +744,7 @@ function getFirstDrinkTimestamp(log) {
   if (!log.length) return null;
   let min = Infinity;
   for (const e of log) {
+    if (e.kind === "start") continue;
     if (typeof e.ts === "number" && Number.isFinite(e.ts)) min = Math.min(min, e.ts);
   }
   return min === Infinity ? null : min;
@@ -800,7 +753,9 @@ function getFirstDrinkTimestamp(log) {
 function getAllowedPureAlcoholCl(log, data, nowMs = Date.now()) {
   const t0 = getFirstDrinkTimestamp(log);
   if (t0 == null) return 0;
-  return Math.max(0, nowMs - t0) * allowanceClPerMsFromData(data);
+  return (
+    INITIAL_ALLOWANCE_PURE_CL + Math.max(0, nowMs - t0) * allowanceClPerMsFromData(data)
+  );
 }
 
 function defaultSelectedBeer() {
@@ -1241,7 +1196,7 @@ function updateSummary(data) {
   el.classList.remove("summary--pace-ok", "summary--pace-warn", "summary--pace-bad");
   el.classList.add(paceClass);
   el.innerHTML = `
-    <div class="summary-label">Drank / allowed <span class="summary-hint">(session start, 2 cl / ${refMin} min)</span></div>
+    <div class="summary-label">Drank / allowed <span class="summary-hint">(from first drink: 1× 5% 40 cl + 2 cl / ${refMin} min)</span></div>
     <div class="summary-value summary-value--dark">${drank.toFixed(2)} / ${allowed.toFixed(2)} cl</div>
     <div class="summary-beer-equiv summary-value--dark">≈ ${beersD.toFixed(2)} / ${beersA.toFixed(2)} beers <span class="summary-hint">(40 cl · 5,5%)</span></div>
   `;
