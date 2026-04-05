@@ -19,10 +19,23 @@ h1 {
   margin-left: 0.15em;
 }
 
+.beer-emoji-tally {
+  box-sizing: border-box;
+  max-width: 720px;
+  margin: 0 auto 8px;
+  padding: 0 8px;
+  font-size: 18px;
+  line-height: 1.35;
+  text-align: center;
+  word-wrap: break-word;
+  min-height: 0;
+}
+
 .topbar,
 .matrix,
 .volume-panel,
 .actions,
+.reset-below-log,
 #summary,
 #log,
 .bottom {
@@ -52,13 +65,16 @@ h1 {
 #beerSearch {
   width: 100%;
   box-sizing: border-box;
-  padding: 9px 88px 9px 10px;
+  height: 48px;
+  padding: 0 88px 0 12px;
   border: 1px solid #c7c7cc;
   border-radius: 10px;
   background: #fff;
-  color: #1c1c1e;
-  /* 16px+ prevents iOS Safari from auto-zooming on focus */
-  font-size: 16px;
+  color: #636366;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
 }
 
 .beer-search-add {
@@ -143,7 +159,9 @@ h1 {
 }
 
 .result-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: 100%;
   box-sizing: border-box;
   margin: 0;
@@ -157,6 +175,12 @@ h1 {
   cursor: pointer;
   color: #1c1c1e;
   font-family: inherit;
+}
+
+.result-item-pace {
+  flex-shrink: 0;
+  font-size: 14px;
+  line-height: 1;
 }
 
 .result-item:last-child {
@@ -294,17 +318,29 @@ h1 {
   margin-bottom: 10px;
 }
 
-.undo {
+/** Match `.matrix.matrix-drink-grid button` tap height (48px). */
+.undo,
+.reset,
+.missing-beers-clear {
   width: 100%;
   box-sizing: border-box;
+  min-height: 48px;
   padding: 8px 10px;
   border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.undo {
   border: 1px solid #c7c7cc;
   background: #f2f2f7;
   color: #1c1c1e;
-  font-size: 13px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .undo:active {
@@ -378,31 +414,41 @@ h1 {
   gap: 8px;
   margin-bottom: 10px;
   text-align: left;
+  font-family: inherit;
   font-size: 12px;
-  line-height: 1.4;
-  color: #3a3a3c;
+  font-weight: 400;
+  line-height: 1.2;
+  color: #636366;
 }
 
 #log h3 {
   margin: 0;
-  font-size: 14px;
-  color: #1c1c1e;
+  font-size: 12px;
+  font-weight: 400;
+  color: #636366;
 }
 
 .log-entry,
 .log-empty {
   box-sizing: border-box;
   width: 100%;
+  min-height: 48px;
   background: #fff;
   border: 1px solid #c7c7cc;
   border-radius: 10px;
-  padding: 10px 12px;
-  color: #3a3a3c;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: #636366;
 }
 
 button.log-entry {
-  font: inherit;
   text-align: left;
+  justify-content: flex-start;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -417,10 +463,12 @@ button.log-entry:active {
   color: #636366;
   font-style: italic;
   text-align: left;
+  justify-content: flex-start;
 }
 
 .log-empty {
   color: #8e8e93;
+  justify-content: flex-start;
 }
 
 .log-edit-backdrop {
@@ -622,17 +670,18 @@ button.log-entry:active {
   padding-right: 36px;
 }
 
+.reset-below-log {
+  margin-bottom: 10px;
+}
+
 .reset {
-  width: 100%;
-  font-size: 14px;
-  padding: 9px;
-  box-sizing: border-box;
-  border-radius: 10px;
   border: 1px solid #c7c7cc;
   background: #c42b2b;
   color: #fff;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+}
+
+.reset:active {
+  background: #a82424;
 }
 
 .page-readme {
@@ -698,7 +747,7 @@ button.log-entry:active {
 
 .missing-beers-block {
   margin-top: 14px;
-  margin-bottom: 14px;
+  margin-bottom: 0;
   padding: 12px 14px;
   text-align: left;
   background: #fff;
@@ -714,7 +763,7 @@ button.log-entry:active {
 }
 
 .missing-beers-list {
-  margin: 0 0 10px;
+  margin: 0;
   padding-left: 1.2em;
   font-size: 13px;
   color: #1c1c1e;
@@ -729,14 +778,11 @@ button.log-entry:active {
 }
 
 .missing-beers-clear {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 10px;
+  margin-top: 10px;
+  margin-bottom: 14px;
   border: 1px solid #c7c7cc;
   background: #f2f2f7;
   color: #1c1c1e;
-  font-size: 13px;
-  cursor: pointer;
 }
 
 .missing-beers-clear:active {

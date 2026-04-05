@@ -58,6 +58,13 @@ function getReferencePeriodMs(data) {
   return getReferencePeriodMinutes(data) * 60 * 1000;
 }
 
+/** Eligible accrual time after each drink: this many × reference period (e.g. 90 min → 180 min window). */
+const ACCRUAL_WINDOW_REFERENCE_PERIODS = 2;
+
+function getAccrualWindowSpanMs(data) {
+  return getReferencePeriodMs(data) * ACCRUAL_WINDOW_REFERENCE_PERIODS;
+}
+
 function allowanceClPerMsFromData(data) {
   return 2 / getReferencePeriodMs(data);
 }
@@ -460,7 +467,7 @@ const BEER_DB = [
   { name: "McEwan's Champion", abv: 7.3 },
   { name: "Meantime IPA", abv: 7.4 },
   { name: "Meantime London Lager", abv: 4.5 },
-  { name: "Melleruds Utmärkta Pilsner", abv: 5.4 },
+  { name: "Melleruds Utmärkta Pilsner", abv: 4.5 },
   { name: "Menabrea Ambrata", abv: 5.0 },
   { name: "Messina Birra", abv: 4.7 },
   { name: "Mikkeller Beer Geek Breakfast", abv: 7.5 },
@@ -639,6 +646,14 @@ function formatBeerSearchResultLine(beer) {
   return `${escapeHtml(beer.name)} · ${formatAbvComma(beer.abv)}% · ${beer.cl} cl (${pureStr} cl)`;
 }
 
+/** Same bands as preset grid / title: if you log this pure cl now, ok / ≤2 cl over / worse. */
+function paceEmojiIfLoggedNow(drank, allowedEffective, pureCl) {
+  const after = drank + pureCl;
+  if (after <= allowedEffective + 0.001) return "\u{1F60E}"; /* SMILING FACE WITH SUNGLASSES */
+  if (after - allowedEffective <= PRESET_OVER_WARN_MAX_CL + 0.001) return "\u{1F610}"; /* NEUTRAL FACE */
+  return "\u{1F621}"; /* POUTING FACE */
+}
+
 /** Local calendar date (YYYY-MM-DD). Matches “today” for the user; avoids UTC midnight surprises from `toISOString()`. */
 function today() {
   const d = new Date();
@@ -803,14 +818,14 @@ function tsToLocalDateAndTime(ms) {
   };
 }
 
-/** Full [ts, ts + P] intervals for real drinks (merged for gap / pause detection). */
+/** Full [ts, ts + W] intervals for real drinks (merged for gap / pause detection); W = accrual window span. */
 function getMergedRawAccrualIntervals(log, data) {
-  const P = getReferencePeriodMs(data);
+  const W = getAccrualWindowSpanMs(data);
   const intervals = [];
   for (const e of log) {
     if (isSyntheticLogEntry(e)) continue;
     if (typeof e.ts !== "number" || !Number.isFinite(e.ts)) continue;
-    intervals.push([e.ts, e.ts + P]);
+    intervals.push([e.ts, e.ts + W]);
   }
   if (intervals.length === 0) return [];
   intervals.sort((a, b) => a[0] - b[0]);
@@ -845,7 +860,7 @@ function getActiveAccrualPauseSinceMs(log, data, nowMs) {
   return best;
 }
 
-/** Appends one log line when accrual has stopped after the reference period past the last active window. */
+/** Appends one log line when accrual has stopped after the accrual window past the last active interval. */
 function syncAccrualPauseLogEntry(data, nowMs = Date.now()) {
   if (getFirstDrinkTimestamp(data.log) == null) return false;
   const pauseSince = getActiveAccrualPauseSinceMs(data.log, data, nowMs);
@@ -866,14 +881,14 @@ function syncAccrualPauseLogEntry(data, nowMs = Date.now()) {
   return true;
 }
 
-/** Length of merged [ts, ts + P] ∩ (-∞, now] over all drinks; accrual only inside these windows. */
+/** Length of merged [ts, ts + W] ∩ (-∞, now] over all drinks; accrual only inside these windows. */
 function getActiveAccrualWindowMs(log, data, nowMs) {
-  const P = getReferencePeriodMs(data);
+  const W = getAccrualWindowSpanMs(data);
   const intervals = [];
   for (const e of log) {
     if (isSyntheticLogEntry(e)) continue;
     if (typeof e.ts !== "number" || !Number.isFinite(e.ts)) continue;
-    const end = Math.min(nowMs, e.ts + P);
+    const end = Math.min(nowMs, e.ts + W);
     if (end <= e.ts) continue;
     intervals.push([e.ts, end]);
   }
@@ -983,11 +998,17 @@ function renderResults(results) {
     return;
   }
 
+  const data = load();
+  const drank = getPureAlcoholCl(data.log);
+  const allowedEffective =
+    getFirstDrinkTimestamp(data.log) == null ? Infinity : getAllowedPureAlcoholCl(data.log, data);
+
   el.innerHTML = results
-    .map(
-      (beer, idx) =>
-        `<button type="button" class="result-item" data-index="${idx}">${formatBeerSearchResultLine(beer)}</button>`
-    )
+    .map((beer, idx) => {
+      const pure = pureAlcoholClFromServing(beer.abv, beer.cl);
+      const face = paceEmojiIfLoggedNow(drank, allowedEffective, pure);
+      return `<button type="button" class="result-item" data-index="${idx}"><span class="result-item-pace" aria-hidden="true">${face}</span> ${formatBeerSearchResultLine(beer)}</button>`;
+    })
     .join("");
 
   Array.from(el.querySelectorAll(".result-item")).forEach((item, idx) => {
@@ -1178,6 +1199,27 @@ function getPureAlcoholCl(log) {
     total += entry.cl * (entry.abv / 100);
   });
   return total;
+}
+
+/** One 🍺 per 2 cl pure (half-up round): 0,9→0, 1→1, 2,75→1, 3→2. */
+const BEER_EMOJI_PURE_CL_PER_UNIT = 2;
+const BEER_EMOJI_TALLY_MAX_VISIBLE = 40;
+
+function updateBeerEmojiTally(data) {
+  const el = document.getElementById("beerEmojiTally");
+  if (!el) return;
+  const pure = getPureAlcoholCl(data.log);
+  const n = Math.max(0, Math.round(pure / BEER_EMOJI_PURE_CL_PER_UNIT));
+  if (n === 0) {
+    el.textContent = "";
+    return;
+  }
+  const show = Math.min(n, BEER_EMOJI_TALLY_MAX_VISIBLE);
+  let s = "\u{1F37A}".repeat(show);
+  if (n > BEER_EMOJI_TALLY_MAX_VISIBLE) {
+    s += ` +${n - BEER_EMOJI_TALLY_MAX_VISIBLE}`;
+  }
+  el.textContent = s;
 }
 
 function labelForSpecificBeer(name, abv, cl) {
@@ -1427,7 +1469,7 @@ function updateSummary(data) {
   const allowed = getAllowedPureAlcoholCl(d.log, d);
   const diff = drank - allowed;
   let paceClass = "summary--pace-ok";
-  let paceFace = "\u{1F60A}"; /* SMILING FACE WITH SMILING EYES */
+  let paceFace = "\u{1F60E}"; /* SMILING FACE WITH SUNGLASSES */
   if (diff > REF_BEER_PURE_CL + 0.001) {
     paceClass = "summary--pace-bad";
     paceFace = "\u{1F621}"; /* POUTING FACE */
@@ -1506,6 +1548,7 @@ function applyReferencePeriodFromInput() {
 function render() {
   const data = load();
   updateSummary(data);
+  updateBeerEmojiTally(data);
 
   let logHtml = "";
   if (data.log.length === 0) {
@@ -1616,7 +1659,13 @@ document.addEventListener("keydown", (e) => {
 });
 
 setInterval(() => {
-  if (document.visibilityState === "visible") updateSummary();
+  if (document.visibilityState !== "visible") return;
+  updateSummary();
+  const sr = document.getElementById("searchResults");
+  if (sr && sr.innerHTML.trim() !== "") {
+    const inp = document.getElementById("beerSearch");
+    if (inp) renderResults(searchBeers(beerSearchQueryForFilter(inp.value)));
+  }
 }, SUMMARY_REFRESH_MS);
 
 document.addEventListener("visibilitychange", () => {
