@@ -30,22 +30,22 @@
       <button type="button" data-custom-cl="40"><span>40 cl</span></button>
       <button type="button" data-custom-cl="50"><span>50 cl</span></button>
     </div>
-    <button type="button" id="clearBeerBtn" class="link-back">Use default 3,5/4,5/5,5% grid</button>
+    <button type="button" id="clearBeerBtn" class="link-back">Use default 2/3,5/5% grid</button>
   </div>
 
   <div class="matrix matrix-drink-grid" id="drinkMatrix">
+    <button type="button" data-drink="2_16_5"><span>2,0% - 20 cl</span></button>
+    <button type="button" data-drink="2_33"><span>2,0% - 33 cl</span></button>
+    <button type="button" data-drink="2_40"><span>2,0% - 40 cl</span></button>
+    <button type="button" data-drink="2_50"><span>2,0% - 50 cl</span></button>
     <button type="button" data-drink="3_16_5"><span>3,5% - 20 cl</span></button>
     <button type="button" data-drink="3_33"><span>3,5% - 33 cl</span></button>
     <button type="button" data-drink="3_40"><span>3,5% - 40 cl</span></button>
     <button type="button" data-drink="3_50"><span>3,5% - 50 cl</span></button>
-    <button type="button" data-drink="4_16_5"><span>4,5% - 20 cl</span></button>
-    <button type="button" data-drink="4_33"><span>4,5% - 33 cl</span></button>
-    <button type="button" data-drink="4_40"><span>4,5% - 40 cl</span></button>
-    <button type="button" data-drink="4_50"><span>4,5% - 50 cl</span></button>
-    <button type="button" data-drink="5_16_5"><span>5,5% - 20 cl</span></button>
-    <button type="button" data-drink="5_33"><span>5,5% - 33 cl</span></button>
-    <button type="button" data-drink="5_40"><span>5,5% - 40 cl</span></button>
-    <button type="button" data-drink="5_50"><span>5,5% - 50 cl</span></button>
+    <button type="button" data-drink="5_16_5"><span>5,0% - 20 cl</span></button>
+    <button type="button" data-drink="5_33"><span>5,0% - 33 cl</span></button>
+    <button type="button" data-drink="5_40"><span>5,0% - 40 cl</span></button>
+    <button type="button" data-drink="5_50"><span>5,0% - 50 cl</span></button>
   </div>
 
   <div class="actions">
@@ -106,6 +106,17 @@
     </section>
   </div>
 
+  <div id="resetConfirmBackdrop" class="log-edit-backdrop hidden" aria-hidden="true">
+    <div class="log-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="resetConfirmTitle">
+      <h2 id="resetConfirmTitle" class="log-edit-title">Reset day?</h2>
+      <p style="margin:0 0 1rem">This will clear all entries for today.</p>
+      <div class="log-edit-actions">
+        <button type="button" id="resetConfirmCancel" class="log-edit-btn log-edit-btn--secondary">Cancel</button>
+        <button type="button" id="resetConfirmOk" class="log-edit-btn log-edit-btn--primary">🔄 Reset</button>
+      </div>
+    </div>
+  </div>
+
   <div id="logEditBackdrop" class="log-edit-backdrop hidden" aria-hidden="true">
     <div class="log-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="logEditTitle">
       <h2 id="logEditTitle" class="log-edit-title">Edit drink</h2>
@@ -121,18 +132,18 @@
         <div class="log-edit-field">
           <span class="log-edit-label">Strength & size</span>
           <div id="logEditMatrix" class="matrix matrix-drink-grid log-edit-matrix" aria-label="ABV and volume">
+            <button type="button" data-drink="2_16_5"><span>2,0% - 20 cl</span></button>
+            <button type="button" data-drink="2_33"><span>2,0% - 33 cl</span></button>
+            <button type="button" data-drink="2_40"><span>2,0% - 40 cl</span></button>
+            <button type="button" data-drink="2_50"><span>2,0% - 50 cl</span></button>
             <button type="button" data-drink="3_16_5"><span>3,5% - 20 cl</span></button>
             <button type="button" data-drink="3_33"><span>3,5% - 33 cl</span></button>
             <button type="button" data-drink="3_40"><span>3,5% - 40 cl</span></button>
             <button type="button" data-drink="3_50"><span>3,5% - 50 cl</span></button>
-            <button type="button" data-drink="4_16_5"><span>4,5% - 20 cl</span></button>
-            <button type="button" data-drink="4_33"><span>4,5% - 33 cl</span></button>
-            <button type="button" data-drink="4_40"><span>4,5% - 40 cl</span></button>
-            <button type="button" data-drink="4_50"><span>4,5% - 50 cl</span></button>
-            <button type="button" data-drink="5_16_5"><span>5,5% - 20 cl</span></button>
-            <button type="button" data-drink="5_33"><span>5,5% - 33 cl</span></button>
-            <button type="button" data-drink="5_40"><span>5,5% - 40 cl</span></button>
-            <button type="button" data-drink="5_50"><span>5,5% - 50 cl</span></button>
+            <button type="button" data-drink="5_16_5"><span>5,0% - 20 cl</span></button>
+            <button type="button" data-drink="5_33"><span>5,0% - 33 cl</span></button>
+            <button type="button" data-drink="5_40"><span>5,0% - 40 cl</span></button>
+            <button type="button" data-drink="5_50"><span>5,0% - 50 cl</span></button>
           </div>
         </div>
       </div>

@@ -90,20 +90,20 @@ function defaultPresetDrinkLabel(abv, cl) {
 const PRESET_OVER_WARN_MAX_CL = 2;
 
 const DEFAULT_DRINKS = {
+  "2_16_5": { abv: 2.0, cl: 20, label: defaultPresetDrinkLabel(2.0, 20) },
+  "2_33":   { abv: 2.0, cl: 33, label: defaultPresetDrinkLabel(2.0, 33) },
+  "2_40":   { abv: 2.0, cl: 40, label: defaultPresetDrinkLabel(2.0, 40) },
+  "2_50":   { abv: 2.0, cl: 50, label: defaultPresetDrinkLabel(2.0, 50) },
+
   "3_16_5": { abv: 3.5, cl: 20, label: defaultPresetDrinkLabel(3.5, 20) },
-  "3_33": { abv: 3.5, cl: 33, label: defaultPresetDrinkLabel(3.5, 33) },
-  "3_40": { abv: 3.5, cl: 40, label: defaultPresetDrinkLabel(3.5, 40) },
-  "3_50": { abv: 3.5, cl: 50, label: defaultPresetDrinkLabel(3.5, 50) },
+  "3_33":   { abv: 3.5, cl: 33, label: defaultPresetDrinkLabel(3.5, 33) },
+  "3_40":   { abv: 3.5, cl: 40, label: defaultPresetDrinkLabel(3.5, 40) },
+  "3_50":   { abv: 3.5, cl: 50, label: defaultPresetDrinkLabel(3.5, 50) },
 
-  "4_16_5": { abv: 4.5, cl: 20, label: defaultPresetDrinkLabel(4.5, 20) },
-  "4_33": { abv: 4.5, cl: 33, label: defaultPresetDrinkLabel(4.5, 33) },
-  "4_40": { abv: 4.5, cl: 40, label: defaultPresetDrinkLabel(4.5, 40) },
-  "4_50": { abv: 4.5, cl: 50, label: defaultPresetDrinkLabel(4.5, 50) },
-
-  "5_16_5": { abv: 5.5, cl: 20, label: defaultPresetDrinkLabel(5.5, 20) },
-  "5_33": { abv: 5.5, cl: 33, label: defaultPresetDrinkLabel(5.5, 33) },
-  "5_40": { abv: 5.5, cl: 40, label: defaultPresetDrinkLabel(5.5, 40) },
-  "5_50": { abv: 5.5, cl: 50, label: defaultPresetDrinkLabel(5.5, 50) }
+  "5_16_5": { abv: 5.0, cl: 20, label: defaultPresetDrinkLabel(5.0, 20) },
+  "5_33":   { abv: 5.0, cl: 33, label: defaultPresetDrinkLabel(5.0, 33) },
+  "5_40":   { abv: 5.0, cl: 40, label: defaultPresetDrinkLabel(5.0, 40) },
+  "5_50":   { abv: 5.0, cl: 50, label: defaultPresetDrinkLabel(5.0, 50) }
 };
 
 // Curated beer list. ABVs are typical retail averages.
@@ -1621,8 +1621,30 @@ document.getElementById("volumePanel").addEventListener("click", (e) => {
   if (Number.isFinite(cl)) addCustomDrink(cl);
 });
 
+function openResetConfirm() {
+  const backdrop = document.getElementById("resetConfirmBackdrop");
+  backdrop.classList.remove("hidden");
+  backdrop.setAttribute("aria-hidden", "false");
+  document.getElementById("resetConfirmCancel").focus();
+}
+
+function closeResetConfirm() {
+  const backdrop = document.getElementById("resetConfirmBackdrop");
+  backdrop.classList.add("hidden");
+  backdrop.setAttribute("aria-hidden", "true");
+}
+
 document.getElementById("undoBtn").addEventListener("click", undoLast);
-document.getElementById("resetBtn").addEventListener("click", resetDay);
+document.getElementById("resetBtn").addEventListener("click", openResetConfirm);
+
+document.getElementById("resetConfirmBackdrop").addEventListener("click", (e) => {
+  if (e.target.id === "resetConfirmBackdrop") closeResetConfirm();
+});
+document.getElementById("resetConfirmCancel").addEventListener("click", closeResetConfirm);
+document.getElementById("resetConfirmOk").addEventListener("click", () => {
+  closeResetConfirm();
+  resetDay();
+});
 
 const referencePeriodInput = document.getElementById("referencePeriodInput");
 if (referencePeriodInput) {
@@ -1654,6 +1676,8 @@ document.getElementById("missingBeersClearBtn").addEventListener("click", clearM
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
+  const resetBackdrop = document.getElementById("resetConfirmBackdrop");
+  if (resetBackdrop && !resetBackdrop.classList.contains("hidden")) { closeResetConfirm(); return; }
   const backdrop = document.getElementById("logEditBackdrop");
   if (backdrop && !backdrop.classList.contains("hidden")) closeLogEditor();
 });
