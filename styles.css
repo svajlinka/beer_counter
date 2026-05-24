@@ -323,6 +323,8 @@ h1 {
 .drink-icon {
   width: 28px;
   height: 28px;
+  max-width: 28px;
+  max-height: 28px;
   object-fit: contain;
   flex-shrink: 0;
 }
