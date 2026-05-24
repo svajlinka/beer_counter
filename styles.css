@@ -314,6 +314,19 @@ h1 {
   font-weight: 700;
 }
 
+.matrix button.drink-btn--icon {
+  flex-direction: row;
+  justify-content: center;
+  gap: 6px;
+}
+
+.drink-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .actions {
   margin-bottom: 10px;
 }
