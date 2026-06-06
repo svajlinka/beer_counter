@@ -7,31 +7,9 @@
   <link rel="stylesheet" href="styles.css?v=20260524-icons" />
 </head>
 <body>
-  <h1>🍺 Beer Counter <span id="titlePaceEmoji" class="title-pace-emoji" aria-hidden="true"></span></h1>
-  <div id="beerEmojiTally" class="beer-emoji-tally" aria-hidden="true"></div>
+  <h1>Beer Counter</h1>
 
   <div id="summary"></div>
-
-  <div class="topbar">
-    <div class="beer-search-wrap">
-      <input id="beerSearch" type="text" placeholder="Tap to browse or type to filter…" autocomplete="off" />
-      <button type="button" id="beerSearchAdd" class="beer-search-add hidden" aria-label="Add search text to missing list" title="Add to missing list">+</button>
-      <button type="button" id="beerSearchClear" class="beer-search-clear hidden" aria-label="Clear search" title="Clear">×</button>
-    </div>
-    <p id="beerSearchMissingFeedback" class="beer-search-missing-feedback hidden" role="status" aria-live="polite"></p>
-    <div id="searchResults" class="results"></div>
-  </div>
-
-  <div id="volumePanel" class="volume-panel hidden" aria-hidden="true">
-    <p class="volume-hint" id="volumeHint">Tap a serving size to add</p>
-    <div class="matrix volume-row">
-      <button type="button" data-custom-cl="20"><span>20 cl</span></button>
-      <button type="button" data-custom-cl="33"><span>33 cl</span></button>
-      <button type="button" data-custom-cl="40"><span>40 cl</span></button>
-      <button type="button" data-custom-cl="50"><span>50 cl</span></button>
-    </div>
-    <button type="button" id="clearBeerBtn" class="link-back">Use default 2/3,5/5% grid</button>
-  </div>
 
   <div class="matrix matrix-drink-grid" id="drinkMatrix">
     <button type="button" data-drink="2_16_5" class="drink-btn--icon"><img src="icons/Galopp 20 cl.png" alt="" class="drink-icon" width="28" height="28"><span>2,0% - 20 cl</span></button>
@@ -49,25 +27,19 @@
   </div>
 
   <div class="actions">
-    <button type="button" id="undoBtn" class="undo">↩️ Undo last</button>
+    <button type="button" id="undoBtn" class="undo">Undo last</button>
   </div>
 
   <div id="log"></div>
-
-  <div class="reset-below-log">
-    <button type="button" id="resetBtn" class="reset">🔄 Reset</button>
-  </div>
 
   <div class="bottom">
     <div class="ref-period-block">
       <label class="ref-period-label" for="referencePeriodInput">Reference period (minutes)</label>
       <select id="referencePeriodInput" class="ref-period-input" aria-label="Reference period in minutes"></select>
+      <label class="ref-period-label go-home-label" for="goHomeTimeInput">Go home time</label>
+      <input id="goHomeTimeInput" class="ref-period-input go-home-input" type="time" aria-label="Go home time" />
+      <button type="button" id="resetBtn" class="reset settings-reset">Reset</button>
     </div>
-    <section class="missing-beers-block" aria-labelledby="missingBeersHeading">
-      <h2 id="missingBeersHeading" class="missing-beers-title">Missing from list</h2>
-      <ul id="missingBeersList" class="missing-beers-list"></ul>
-    </section>
-    <button type="button" id="missingBeersClearBtn" class="missing-beers-clear">🧹 Clear missing list</button>
     <section class="page-readme" aria-labelledby="readmeTitle">
       <h2 id="readmeTitle" class="page-readme-title">Read me</h2>
       <div class="page-readme-body">
@@ -77,29 +49,30 @@
 
         <h3 class="page-readme-subtitle">How to use</h3>
         <ul class="page-readme-list">
-          <li><strong>Quick presets.</strong> Tap a cell in the strength × size grid (3,5% / 4,5% / 5,5% and 20–50 cl) to log a drink with that ABV and volume.</li>
-          <li><strong>Named beers.</strong> Open the search field, type to filter (or leave it empty to browse). Each beer appears as four rows (20, 33, 40, 50 cl). Tap a row to log it in one step.</li>
-          <li><strong>Summary.</strong> At the top, <strong>Drank / allowed</strong> shows pure alcohol in cl and approximate “beers” (40 cl · 5,5% reference). Parentheses show how much room you have left, or how far over you are.</li>
-          <li><strong>Log.</strong> Newest entries appear first. Tap a line to edit date, time, or preset. <strong>Undo last</strong> removes the most recent entry.</li>
-          <li><strong>Reference period.</strong> Use the dropdown (30–120 minutes) to set how fast <strong>allowed</strong> grows during active drinking windows. You can change it anytime; the app recalculates.</li>
-          <li><strong>Reset.</strong> Clears today’s drink log only (not your missing-beer wish list).</li>
-          <li><strong>Missing from list.</strong> Type a name in the search field and tap <strong>+</strong> to save it for later (e.g. to add to the database). <strong>Clear missing list</strong> removes all saved names after you’ve handled them.</li>
+          <li><strong>Quick presets.</strong> Tap a cell in the strength × size grid (2,0% / 3,5% / 5,0% and 20–50 cl) to log a drink with that ABV and volume.</li>
+          <li><strong>Summary.</strong> <strong>Drank / allowed</strong> shows pure alcohol and approximate standard beers. The message line shows when the next standard beer is available, too late before going home, or past go-home time.</li>
+          <li><strong>Log.</strong> Newest entries appear first. Tap a line to edit date, time, or preset. <strong>Undo last</strong> removes the newest entry.</li>
+          <li><strong>Reference period.</strong> Use the dropdown (30–180 minutes) to set the pace. After the starter allowance, this is the wait between beers.</li>
+          <li><strong>Go home time.</strong> Optional. When set, the app blocks new beers during the final reference period before leaving, then switches to a go-home message after that time.</li>
+          <li><strong>Reset.</strong> Clears the current drink log. Reference period and go-home time stay set.</li>
         </ul>
 
         <h3 class="page-readme-subtitle">Logic and rules</h3>
         <ul class="page-readme-list">
-          <li><strong>Pure alcohol.</strong> Each drink is converted to centilitres of pure alcohol: volume × ABV. That is what <strong>drank</strong> and <strong>allowed</strong> compare.</li>
-          <li><strong>Allowed curve.</strong> When you have at least one drink logged, <strong>allowed</strong> includes a one-time <strong>2 cl</strong> head start (same pure alcohol as one 5% · 40 cl), plus <strong>2 cl per reference period</strong> of eligible time.</li>
-          <li><strong>Time windows.</strong> Eligible time counts only inside intervals that start at each drink’s logged time and last <strong>twice</strong> your reference period (e.g. 180 minutes when the period is 90). If intervals overlap (several drinks close together), they merge. After the last interval ends, <strong>allowed</strong> stops rising until you log another drink—so a long break does not keep earning allowance.</li>
-          <li><strong>Pause marker.</strong> When the app detects that allowance has stopped increasing for that reason, it may add a neutral line to the log (not a drink) marking when that pause started.</li>
-          <li><strong>Summary colours.</strong> The summary card is green when you are at or under allowed; yellow if you are over by up to one reference “beer” (2,2 cl pure, i.e. 40 cl · 5,5%); red if further over.</li>
-          <li><strong>Preset grid colours.</strong> Each preset button is tinted <strong>green</strong> if logging it would keep you at or under allowed, <strong>yellow</strong> if it would put you over by at most 2 cl pure, and <strong>red</strong> if more than 2 cl over. Before the first drink of the day, all presets show green.</li>
+          <li><strong>Standard beer.</strong> One standard beer is 40 cl at 5%, which equals 2 cl pure alcohol.</li>
+          <li><strong>Pure alcohol.</strong> Each drink is converted with volume × ABV. Example: 50 cl at 5% is 2,5 cl pure alcohol.</li>
+          <li><strong>Starter allowance.</strong> The first <strong>4 cl</strong> of pure alcohol, equal to two standard beers, can be started without waiting.</li>
+          <li><strong>Cooldown.</strong> After the starter allowance, a new beer is OK only when one full reference period has passed since the latest real drink.</li>
+          <li><strong>Go-home cutoff.</strong> Last normal beer start is go-home time minus the reference period. Before that, the app can show <strong>Next beer in X min</strong>. During the final window it shows <strong>No more beers before going home</strong>. After go-home time it shows <strong>No more beers go home</strong>.</li>
+          <li><strong>Summary colours.</strong> Green means current drank is at or under allowed. Red means current drank is over allowed. There is no yellow status.</li>
+          <li><strong>Preset colours.</strong> Green means starting that beer is OK now. Red means not OK because of cooldown or go-home cutoff.</li>
+          <li><strong>Midnight sessions.</strong> A go-home time earlier than the first drink, such as 02:00 after starting at 16:00, is treated as the next day.</li>
         </ul>
 
         <h3 class="page-readme-subtitle">Features and notes</h3>
         <ul class="page-readme-list">
-          <li><strong>Persistence.</strong> Log, settings, and missing-beer names are stored locally (browser storage). They survive closing the tab, but not another device or a cleared browser profile.</li>
-          <li><strong>No automatic daily reset.</strong> The drink log stays until you tap <strong>Reset</strong> (or clear site data). Reference period and missing-beer list are not cleared by Reset.</li>
+          <li><strong>Persistence.</strong> Log and settings are stored locally in this browser. They survive closing the tab, but not another device or cleared site data.</li>
+          <li><strong>No automatic daily reset.</strong> The drink log stays until you tap <strong>Reset</strong>. The session date is anchored to the first real drink, so after-midnight sessions keep working.</li>
           <li><strong>Not medical advice.</strong> The limits are a personal planning tool, not a safety or health guideline.</li>
         </ul>
       </div>
@@ -112,7 +85,7 @@
       <p style="margin:0 0 1rem">This will clear all entries for today.</p>
       <div class="log-edit-actions">
         <button type="button" id="resetConfirmCancel" class="log-edit-btn log-edit-btn--secondary">Cancel</button>
-        <button type="button" id="resetConfirmOk" class="log-edit-btn log-edit-btn--primary">🔄 Reset</button>
+        <button type="button" id="resetConfirmOk" class="log-edit-btn log-edit-btn--primary">Reset</button>
       </div>
     </div>
   </div>
