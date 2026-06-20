@@ -52,7 +52,7 @@
           <li><strong>Quick presets.</strong> Tap a cell in the strength × size grid (2,0% / 3,5% / 5,0% and 20–50 cl) to log a drink with that ABV and volume.</li>
           <li><strong>Summary.</strong> <strong>Drank / allowed</strong> shows pure alcohol and approximate standard beers. The message line shows when the next standard beer is available, too late before going home, or past go-home time.</li>
           <li><strong>Log.</strong> Newest entries appear first. Tap a line to edit date, time, or preset. <strong>Undo last</strong> removes the newest entry.</li>
-          <li><strong>Reference period.</strong> Use the dropdown (30–180 minutes) to set the pace. After the starter allowance, this is the wait between beers.</li>
+          <li><strong>Reference period.</strong> Use the dropdown (30–180 minutes) to set the pace. Starting with the first logged drink, one standard beer is added to the allowance after each complete reference period.</li>
           <li><strong>Go home time.</strong> Optional. When set, the app blocks new beers during the final reference period before leaving, then switches to a go-home message after that time.</li>
           <li><strong>Reset.</strong> Clears the current drink log. Reference period and go-home time stay set.</li>
         </ul>
@@ -61,11 +61,11 @@
         <ul class="page-readme-list">
           <li><strong>Standard beer.</strong> One standard beer is 40 cl at 5%, which equals 2 cl pure alcohol.</li>
           <li><strong>Pure alcohol.</strong> Each drink is converted with volume × ABV. Example: 50 cl at 5% is 2,5 cl pure alcohol.</li>
-          <li><strong>Starter allowance.</strong> The first <strong>4 cl</strong> of pure alcohol, equal to two standard beers, can be started without waiting.</li>
-          <li><strong>Cooldown.</strong> After the starter allowance, a new beer is OK only when one full reference period has passed since the latest real drink.</li>
-          <li><strong>Go-home cutoff.</strong> Last normal beer start is go-home time minus the reference period. Before that, the app can show <strong>Next beer in X min</strong>. During the final window it shows <strong>No more beers before going home</strong>. After go-home time it shows <strong>No more beers go home</strong>.</li>
+          <li><strong>Starter allowance.</strong> The first <strong>4 cl</strong> of pure alcohol, equal to two standard beers, is available when the session starts.</li>
+          <li><strong>Availability.</strong> A preset is green only when the current total plus that drink fits the allowance earned since the first drink. The standard-beer countdown uses the same rule.</li>
+          <li><strong>Go-home cutoff.</strong> Last normal beer start is go-home time minus the reference period. Before that, the app can show when the next <strong>5,0%, 40 cl standard beer</strong> fits the allowance. During the final window it shows <strong>No more standard beers before going home</strong>. After go-home time it shows <strong>No more beers go home</strong>.</li>
           <li><strong>Summary colours.</strong> Green means current drank is at or under allowed. Red means current drank is over allowed. There is no yellow status.</li>
-          <li><strong>Preset colours.</strong> Green means starting that beer is OK now. Red means not OK because of cooldown or go-home cutoff.</li>
+          <li><strong>Preset colours.</strong> Green means that drink fits the current allowance. Red means it exceeds the allowance or is blocked by the go-home cutoff.</li>
           <li><strong>Midnight sessions.</strong> A go-home time earlier than the first drink, such as 02:00 after starting at 16:00, is treated as the next day.</li>
         </ul>
 

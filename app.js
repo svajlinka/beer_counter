@@ -21,7 +21,7 @@ const REF_BEER_CL = 40;
 const REF_BEER_ABV = 5;
 const REF_BEER_PURE_CL = REF_BEER_CL * (REF_BEER_ABV / 100);
 
-/** First two standard beers can be started without waiting; later beers use the cooldown. */
+/** Two standard beers are available at session start; another is earned each reference period. */
 const INITIAL_ALLOWANCE_STANDARD_BEERS = 2;
 const INITIAL_ALLOWANCE_PURE_CL = INITIAL_ALLOWANCE_STANDARD_BEERS * REF_BEER_PURE_CL;
 
@@ -262,27 +262,23 @@ function getRealDrinkEntriesOldestFirst(log) {
   return entries;
 }
 
-function getLastDrinkTimestamp(log) {
-  const entries = getRealDrinkEntriesOldestFirst(log);
-  return entries.length ? entries[entries.length - 1].ts : null;
-}
-
-function getStarterAllowanceUsedAtMs(log) {
-  let total = 0;
-  for (const entry of getRealDrinkEntriesOldestFirst(log)) {
-    total += pureAlcoholClFromServing(entry.abv, entry.cl);
-    if (total >= INITIAL_ALLOWANCE_PURE_CL - 0.001) return entry.ts;
-  }
-  return null;
-}
-
 function getAllowedPureAlcoholCl(log, data, nowMs = Date.now()) {
   const firstDrinkMs = getFirstDrinkTimestamp(log);
   if (firstDrinkMs == null) return 0;
-  const starterUsedAtMs = getStarterAllowanceUsedAtMs(log);
-  if (starterUsedAtMs === null || nowMs < starterUsedAtMs) return INITIAL_ALLOWANCE_PURE_CL;
-  const completedCooldowns = Math.max(0, Math.floor((nowMs - starterUsedAtMs) / getReferencePeriodMs(data)));
+  const completedCooldowns = Math.max(0, Math.floor((nowMs - firstDrinkMs) / getReferencePeriodMs(data)));
   return INITIAL_ALLOWANCE_PURE_CL + completedCooldowns * REF_BEER_PURE_CL;
+}
+
+/** First instant at which a serving fits the allowance earned since the session started. */
+function getDrinkAvailableAtMs(data, drank, pureCl) {
+  const firstDrinkMs = getFirstDrinkTimestamp(data.log);
+  if (firstDrinkMs === null) return null;
+  const projected = drank + pureCl;
+  if (projected <= INITIAL_ALLOWANCE_PURE_CL + 0.001) return firstDrinkMs;
+  const periodsNeeded = Math.ceil(
+    (projected - INITIAL_ALLOWANCE_PURE_CL - 0.001) / REF_BEER_PURE_CL
+  );
+  return firstDrinkMs + periodsNeeded * getReferencePeriodMs(data);
 }
 
 function getGoHomeMs(data) {
@@ -314,37 +310,37 @@ function projectedDrinkStatus(d, drank, pureCl, nowMs = Date.now()) {
   const projected = drank + pureCl;
   const goHomePhase = getGoHomePhase(d, nowMs);
   if (goHomePhase === "gone-home") return "gone-home";
-  if (projected <= INITIAL_ALLOWANCE_PURE_CL + 0.001) return "ok";
   if (goHomePhase === "before-home") return "too-late";
-  const lastDrinkMs = getLastDrinkTimestamp(d.log);
-  if (lastDrinkMs === null) return "ok";
-  if (nowMs < lastDrinkMs + getReferencePeriodMs(d) - 1) return "bad";
-  return "ok";
+  const allowed = getFirstDrinkTimestamp(d.log) === null
+    ? INITIAL_ALLOWANCE_PURE_CL
+    : getAllowedPureAlcoholCl(d.log, d, nowMs);
+  return projected <= allowed + 0.001 ? "ok" : "bad";
 }
 
 function formatCountdownDuration(ms) {
   const totalMinutes = Math.max(1, Math.ceil(ms / (60 * 1000)));
-  return `${totalMinutes} min`;
+  if (totalMinutes < 120) return `${totalMinutes} min`;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (minutes === 0) return `${hours} hr`;
+  return `${hours} hr ${minutes} min`;
 }
 
 function getNextReferenceBeerStatusLine(d, drank, nowMs = Date.now()) {
   const goHomePhase = getGoHomePhase(d, nowMs);
   if (goHomePhase === "gone-home") return "No more beers go home";
-  if (drank + REF_BEER_PURE_CL <= INITIAL_ALLOWANCE_PURE_CL + 0.001) return "";
+  if (goHomePhase === "before-home") return "No more standard beers before going home";
 
-  if (goHomePhase === "before-home") return "No more beers before going home";
-
-  const lastDrinkMs = getLastDrinkTimestamp(d.log);
-  if (lastDrinkMs === null) return "";
-
-  const msUntilNextBeer = lastDrinkMs + getReferencePeriodMs(d) - nowMs;
+  const availableAtMs = getDrinkAvailableAtMs(d, drank, REF_BEER_PURE_CL);
+  if (availableAtMs === null) return "";
+  const msUntilNextBeer = availableAtMs - nowMs;
   if (msUntilNextBeer <= 1) return "";
   const lastStartMs = getGoHomeLastStartMs(d);
-  if (lastStartMs !== null && nowMs + msUntilNextBeer > lastStartMs + 1) {
-    return "No more beers before going home";
+  if (lastStartMs !== null && availableAtMs > lastStartMs + 1) {
+    return "No more standard beers before going home";
   }
 
-  return `Next beer in ${formatCountdownDuration(msUntilNextBeer)}`;
+  return `Next standard beer (${formatAbvComma(REF_BEER_ABV)}%, ${REF_BEER_CL} cl) in ${formatCountdownDuration(msUntilNextBeer)}`;
 }
 
 function load() {
